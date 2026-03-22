@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>秒著 - AI软著材料生成</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+:root {
+  --bg-primary: #FAF9F7;
+  --bg-secondary: #F0EDE8;
+  --bg-card: #FFFFFF;
+  --text-primary: #1A1A1A;
+  --text-secondary: #6B6560;
+  --text-muted: #9B9590;
+  --accent-primary: #C96442;
+  --accent-hover: #B5573A;
+  --accent-light: #F5E6DE;
+  --accent-success: #2D8659;
+  --accent-success-light: #E8F5EE;
+  --border-subtle: #E8E4DF;
+  --border-active: #C96442;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.08);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #FAF9F7;
+  color: #1A1A1A;
+  line-height: 1.6;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+.app-container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 48px 32px;
+}
+.header {
+  margin-bottom: 48px;
+  text-align: center;
+  position: relative;
+}
+.header::before, .header::after { display: none; }
+.header-label {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: #C96442;
+  margin-bottom: 12px;
+  text-transform: none;
+}
+.header h1 {
+  font-size: 42px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  margin-bottom: 12px;
+  color: #1A1A1A;
+}
+.header h1 span { color: #C96442; }
+.header-subtitle {
+  font-size: 16px;
+  color: #6B6560;
+  font-weight: 400;
+}
+.steps-horizontal {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 48px;
+  border: none;
+  position: relative;
+}
+.steps-horizontal::before { display: none; }
+.step-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  border: 1px solid #E8E4DF;
+  border-radius: 12px;
+  background: #FFFFFF;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+.step-item:last-child { border-right: 1px solid #E8E4DF; }
+.step-item:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+  transform: translateY(-1px);
+}
+.step-item.active {
+  border-color: #C96442;
+  box-shadow: 0 0 0 1px #C96442, 0 4px 12px rgba(0,0,0,0.06);
+}
+.step-item.active::after { display: none; }
+.step-item.completed { border-color: #2D8659; }
+.step-item.completed::after { display: none; }
+.step-item.disabled { opacity: 0.4; pointer-events: none; }
+.step-number {
+  font-size: 24px;
+  font-weight: 700;
+  color: #9B9590;
+  min-width: 36px;
+  line-height: 1;
+}
+.step-item.active .step-number { color: #C96442; }
+.step-item.completed .step-number { color: #2D8659; font-size: 20px; }
+.step-item.completed .step-number::after { content: ' ✓'; font-size: 16px; }
+.step-info { flex: 1; }
+.step-title { font-size: 14px; font-weight: 600; color: #1A1A1A; margin-bottom: 2px; }
+.step-desc { font-size: 12px; color: #9B9590; font-weight: 400; }
+.step-status {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  background: #F0EDE8;
+  color: #9B9590;
+  border: none;
+  border-radius: 20px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.step-status.loading { background: #F5E6DE; color: #C96442; }
+.step-status.success, .step-status.completed { background: #E8F5EE; color: #2D8659; }
+.step-status.error { background: #FEF2F2; color: #C53030; }
+.content-area { max-width: 960px; margin: 0 auto; min-height: 400px; }
+.step-panel { display: none; animation: fadeIn 0.3s ease; }
+.step-panel.active { display: block; }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.panel-header { margin-bottom: 32px; position: relative; }
+.panel-header::before { display: none; }
+.panel-header h2 {
+  font-size: 28px; font-weight: 700; letter-spacing: -0.02em;
+  margin-bottom: 8px; padding-top: 0; color: #1A1A1A;
+}
+.panel-header p { color: #6B6560; font-size: 15px; }
+.form-group { margin-bottom: 20px; }
+.form-group:last-child { margin-bottom: 0; }
+label {
+  display: block; font-size: 13px; font-weight: 600;
+  color: #1A1A1A; margin-bottom: 8px;
+  text-transform: none; letter-spacing: 0;
+}
+input[type="text"], input[type="password"], select, textarea {
+  width: 100%; padding: 12px 16px; font-size: 15px; font-family: inherit;
+  background: #FFFFFF; border: 1px solid #E8E4DF;
+  border-radius: 8px; color: #1A1A1A;
+  transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+input[type="text"]:focus, input[type="password"]:focus, select:focus, textarea:focus {
+  outline: none; border-color: #C96442;
+  box-shadow: 0 0 0 3px #F5E6DE; border-left-width: 1px;
+}
+input::placeholder, textarea::placeholder { color: #9B9590; }
+textarea { min-height: 100px; resize: vertical; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 8px; padding: 12px 24px; font-size: 14px; font-weight: 600;
+  border: none; border-radius: 8px; cursor: pointer;
+  transition: all 0.2s; letter-spacing: 0; text-transform: none;
+  position: relative; overflow: hidden;
+}
+.btn::before { display: none; }
+.btn-primary {
+  background: #C96442; color: white;
+  box-shadow: 0 1px 3px rgba(201,100,66,0.3);
+}
+.btn-primary:hover {
+  background: #B5573A;
+  box-shadow: 0 2px 8px rgba(201,100,66,0.4);
+  transform: translateY(-1px);
+}
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+.btn-secondary {
+  background: #FFFFFF; color: #1A1A1A;
+  border: 1px solid #E8E4DF; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+.btn-secondary:hover { background: #F0EDE8; border-color: #9B9590; }
+.btn-success {
+  background: #2D8659; color: white;
+  box-shadow: 0 1px 3px rgba(45,134,89,0.3);
+}
+.btn-success:hover { background: #257A4D; transform: translateY(-1px); }
+.btn-success:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.btn-full { width: 100%; }
+.upload-zone {
+  border: 2px dashed #E8E4DF; border-radius: 16px;
+  padding: 48px 40px; text-align: center; transition: all 0.2s;
+  cursor: pointer; background: #FFFFFF;
+}
+.upload-zone:hover, .upload-zone.dragover {
+  border-color: #C96442; background: #F5E6DE;
+}
+.upload-zone-icon { font-size: 40px; margin-bottom: 16px; color: #9B9590; }
+.upload-zone-title { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+.upload-zone-desc { font-size: 13px; color: #9B9590; }
+.file-list { margin-top: 24px; }
+.file-item {
+  display: flex; align-items: center; gap: 14px; padding: 14px 18px;
+  background: #FFFFFF; border: 1px solid #E8E4DF;
+  border-radius: 8px; margin-bottom: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+.file-item-icon { font-size: 18px; color: #6B6560; }
+.file-item-name { flex: 1; font-size: 14px; font-weight: 500; }
+.file-item-size { font-size: 13px; color: #9B9590; }
+.file-item-remove {
+  background: none; border: none; color: #9B9590;
+  cursor: pointer; font-size: 18px; padding: 4px;
+  border-radius: 4px; transition: all 0.2s;
+}
+.file-item-remove:hover { color: #C53030; background: #FEF2F2; }
+.progress-section { margin-top: 32px; }
+.progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.progress-percentage { font-size: 36px; font-weight: 700; color: #C96442; line-height: 1; }
+.progress-status-text { font-size: 14px; color: #6B6560; text-align: right; }
+.progress-bar-container {
+  height: 6px; background: #F0EDE8; border-radius: 3px;
+  margin-bottom: 28px; overflow: hidden;
+}
+.progress-bar {
+  height: 100%; background: linear-gradient(90deg, #C96442, #D4A574);
+  width: 0%; transition: width 0.4s ease; border-radius: 3px;
+  position: relative; overflow: hidden;
+}
+.progress-bar::after {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  animation: shimmer 1.5s infinite;
+}
+@keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+.progress-steps { display: flex; flex-direction: column; gap: 12px; }
+.progress-step {
+  display: flex; align-items: center; gap: 14px; padding: 14px 18px;
+  background: #FFFFFF; border: 1px solid #E8E4DF;
+  border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+.progress-step-icon {
+  width: 28px; height: 28px; display: flex; align-items: center;
+  justify-content: center; color: #9B9590;
+  border: 2px solid #E8E4DF; border-radius: 50%; flex-shrink: 0;
+}
+.progress-step-icon::before { content: ''; font-size: 12px; }
+.progress-step.active .progress-step-icon {
+  color: #C96442; border-color: #C96442; background: #F5E6DE;
+}
+.progress-step.active .progress-step-icon::before { content: '●'; color: #C96442; font-size: 10px; }
+.progress-step.completed .progress-step-icon {
+  color: white; border-color: #2D8659; background: #2D8659;
+}
+.progress-step.completed .progress-step-icon::before { content: '✓'; color: white; font-size: 13px; font-weight: 700; }
+.progress-step-text { flex: 1; font-size: 14px; font-weight: 500; }
+.progress-step.active .progress-step-text { color: #C96442; }
+.progress-step.completed .progress-step-text { color: #2D8659; }
+.results-section { margin-top: 32px; }
+.result-tabs { display: flex; gap: 0; border-bottom: 1px solid #E8E4DF; margin-bottom: 0; }
+.result-tab {
+  padding: 14px 28px; font-size: 14px; font-weight: 600;
+  color: #9B9590; cursor: pointer;
+  border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.2s;
+}
+.result-tab.active { color: #C96442; border-bottom-color: #C96442; }
+.result-tab:hover:not(.active) { color: #1A1A1A; }
+.result-card {
+  background: #FFFFFF; border: 1px solid #E8E4DF;
+  border-top: none; border-radius: 0 0 12px 12px;
+  margin-bottom: 20px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+.result-card-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px 20px; background: #F0EDE8;
+  border-bottom: 1px solid #E8E4DF;
+}
+.result-card-title { font-size: 14px; font-weight: 600; }
+.result-card-actions { display: flex; gap: 10px; }
+.result-card-body { padding: 20px; max-height: 400px; overflow-y: auto; }
+.result-card-body pre {
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 13px; line-height: 1.7; white-space: pre-wrap; word-break: break-all;
+}
+.error-message {
+  padding: 16px 20px; background: #FEF2F2; border: 1px solid #FECACA;
+  border-radius: 8px; color: #C53030; font-size: 14px;
+}
+.success-message {
+  padding: 16px 20px; background: #E8F5EE;
+  border: 1px solid #A7D7BE; border-radius: 8px;
+  color: #2D8659; font-size: 14px; font-weight: 600;
+}
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.info-grid .field-wide { grid-column: 1 / -1; }
+.info-section-title {
+  grid-column: 1 / -1; display: flex; align-items: center; gap: 10px;
+  padding: 10px 0 6px; font-size: 13px; font-weight: 600;
+  color: #6B6560; letter-spacing: 0.02em;
+  text-transform: none; border-bottom: 1px solid #E8E4DF;
+}
+.info-section-title::before {
+  content: ''; width: 4px; height: 16px;
+  background: #C96442; border-radius: 2px; flex-shrink: 0;
+}
+.advanced-toggle {
+  grid-column: 1 / -1; display: flex; align-items: center; gap: 8px;
+  padding: 14px 18px; background: #FFFFFF;
+  border: 1px solid #E8E4DF; border-radius: 8px;
+  cursor: pointer; font-size: 13px; font-weight: 600;
+  color: #6B6560; transition: all 0.2s;
+  user-select: none; box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+.advanced-toggle:hover { border-color: #C96442; color: #1A1A1A; }
+.advanced-toggle .toggle-arrow { transition: transform 0.2s; font-size: 11px; }
+.advanced-toggle.open .toggle-arrow { transform: rotate(90deg); }
+.advanced-toggle .toggle-count { margin-left: auto; font-size: 11px; font-weight: 400; color: #9B9590; }
+.advanced-fields {
+  grid-column: 1 / -1; display: none;
+  grid-template-columns: 1fr 1fr; gap: 20px;
+}
+.advanced-fields.open { display: grid; }
+.advanced-fields .field-wide { grid-column: 1 / -1; }
+.field-required label::after { content: ' *'; color: #C96442; }
+.field-auto-filled input, .field-auto-filled textarea { border-left: 3px solid #2D8659; }
+.field-auto-tag {
+  display: inline-block; font-size: 10px; font-weight: 600;
+  color: #2D8659; background: #E8F5EE;
+  padding: 2px 8px; margin-left: 8px; border-radius: 10px;
+  letter-spacing: 0; text-transform: none; vertical-align: middle;
+}
+.img-tip { font-size: 13px; color: #6B6560; margin-top: 12px; }
+@media (max-width: 768px) {
+  .steps-horizontal { flex-direction: column; gap: 8px; }
+  .step-item { border-right: 1px solid #E8E4DF; }
+  .header h1 { font-size: 32px; }
+  .info-grid { grid-template-columns: 1fr; }
+  .app-container { padding: 32px 20px; }
+}
+</style>
+</head>
+<body>
+<div class="app-container">
+  <header class="header">
+    <div class="header-left">
+      <div class="header-label">自动化系统</div>
+      <h1>秒<span>著</span></h1>
+      <p class="header-subtitle">AI 驱动 · 一键生成软件著作权申请材料</p>
+    </div>
+  </header>
+  <div class="steps-horizontal">
+    <div class="step-item active" id="step-0" onclick="goToStep(0)">
+      <div class="step-number">01</div>
+      <div class="step-info">
+        <div class="step-title">配置模型</div>
+        <div class="step-desc">设置API密钥</div>
+      </div>
+      <div class="step-status" id="status-0">待处理</div>
+    </div>
+    <div class="step-item disabled" id="step-1" onclick="goToStep(1)">
+      <div class="step-number">02</div>
+      <div class="step-info">
+        <div class="step-title">上传文件</div>
+        <div class="step-desc">选择文档</div>
+      </div>
+      <div class="step-status" id="status-1">待处理</div>
+    </div>
+    <div class="step-item disabled" id="step-2" onclick="goToStep(2)">
+      <div class="step-number">03</div>
+      <div class="step-info">
+        <div class="step-title">确认信息</div>
+        <div class="step-desc">核对提取内容</div>
+      </div>
+      <div class="step-status" id="status-2">待处理</div>
+    </div>
+    <div class="step-item disabled" id="step-3" onclick="goToStep(3)">
+      <div class="step-number">04</div>
+      <div class="step-info">
+        <div class="step-title">生成结果</div>
+        <div class="step-desc">下载文档</div>
+      </div>
+      <div class="step-status" id="status-3">待处理</div>
+    </div>
+  </div>
+  <div class="content-area">
+    <div class="step-panel active" id="panel-0">
+      <div class="panel-header">
+        <h2>模型配置</h2>
+        <p>配置火山引擎API密钥以启用AI处理功能</p>
+      </div>
+      <div style="background:#FFFFFF;border:1px solid #E8E4DF;border-radius:8px;padding:20px 24px;margin-bottom:24px;font-size:14px;color:#6B6560;line-height:1.8;box-shadow:0 1px 2px rgba(0,0,0,0.04)">
+        使用前请先启动本地代理：<br>
+        <span style="color:#1A1A1A;font-weight:600">node proxy.js</span>（与 HTML 文件同目录）<br>
+        <span style="font-size:13px">代理运行在 localhost:3000，解决浏览器跨域限制</span>
+      </div>
+      <div class="form-group">
+        <label>API Key</label>
+        <input type="password" id="apiKey" placeholder="输入您的火山引擎API密钥"/>
+      </div>
+      <div class="form-group">
+        <label>模型选择</label>
+        <select id="modelSelect">
+          <option value="doubao-seed-2-0-code">Doubao Seed 2.0 Code (推荐)</option>
+          <option value="doubao-seed-2-0-pro">Doubao Seed 2.0 Pro</option>
+          <option value="kimi-k2-5">Kimi K2.5</option>
+          <option value="deepseek-v3-2">DeepSeek V3.2</option>
+          <option value="glm-4-7">GLM 4.7</option>
+          <option value="minimax-m2-5">MiniMax M2.5</option>
+        </select>
+      </div>
+      <div style="margin-top: 24px;">
+        <button class="btn btn-primary btn-full" onclick="saveConfig()">保存并继续</button>
+      </div>
+    </div>
+    <div class="step-panel" id="panel-1">
+      <div class="panel-header">
+        <h2>上传文件</h2>
+        <p>上传需要处理的文档(.doc, .docx, .pdf格式)，支持多选</p>
+      </div>
+      <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+        <div class="upload-zone-icon">📄</div>
+        <div class="upload-zone-title">点击或拖拽文件到此处</div>
+        <div class="upload-zone-desc">支持 .doc, .docx, .pdf 格式，可多选，单个文件最大 10MB</div>
+      </div>
+      <input type="file" id="fileInput" accept=".doc,.docx,.pdf" multiple style="display: none;" onchange="handleFileSelect(event)"/>
+      <div class="file-list" id="fileList"></div>
+      <div style="margin-top: 16px;">
+        <label>或直接粘贴文档内容</label>
+        <textarea id="pasteText" placeholder="将文档内容粘贴到这里..."></textarea>
+      </div>
+      <p id="imgTip" class="img-tip"></p>
+      <div style="margin-top: 24px;">
+        <button class="btn btn-primary btn-full" id="processBtn" onclick="extractInfo()" disabled>AI 提取信息</button>
+      </div>
+    </div>
+    <div class="step-panel" id="panel-2">
+      <div class="panel-header">
+        <h2>确认信息</h2>
+        <p>请核对以下提取的信息，有误可直接修改</p>
+      </div>
+      <div class="progress-section" id="extractProgress" style="display:none;">
+        <div class="progress-header">
+          <div class="progress-percentage" id="extractPercentage">0%</div>
+          <div class="progress-status-text" id="extractStatusText">准备中...</div>
+        </div>
+        <div class="progress-bar-container">
+          <div class="progress-bar" id="extractProgressBar"></div>
+        </div>
+        <div class="progress-steps">
+          <div class="progress-step" id="eps-0">
+            <div class="progress-step-icon"></div>
+            <div class="progress-step-text">读取文档内容</div>
+          </div>
+          <div class="progress-step" id="eps-1">
+            <div class="progress-step-icon"></div>
+            <div class="progress-step-text">AI提取关键信息</div>
+          </div>
+        </div>
+      </div>
+      <div class="info-grid" id="infoForm"></div>
+      <div style="margin-top: 24px; display: flex; gap: 12px;">
+        <button class="btn btn-secondary" onclick="goToStep(1)">返回修改</button>
+        <button class="btn btn-primary" style="flex:1" id="btnGenerate" onclick="generateAll()" disabled>生成软著材料</button>
+      </div>
+    </div>
+    <div class="step-panel" id="panel-3">
+      <div class="panel-header">
+        <h2>生成结果</h2>
+        <p>AI生成的软件著作权申请材料</p>
+      </div>
+      <div class="progress-section" id="genProgress">
+        <div class="progress-header">
+          <div class="progress-percentage" id="genPercentage">0%</div>
+          <div class="progress-status-text" id="genStatusText">准备中...</div>
+        </div>
+        <div class="progress-bar-container">
+          <div class="progress-bar" id="genProgressBar"></div>
+        </div>
+        <div class="progress-steps">
+          <div class="progress-step" id="gps-0">
+            <div class="progress-step-icon"></div>
+            <div class="progress-step-text">生成软件概述</div>
+          </div>
+          <div class="progress-step" id="gps-1">
+            <div class="progress-step-icon"></div>
+            <div class="progress-step-text">生成设计说明书</div>
+          </div>
+        </div>
+      </div>
+      <div class="results-section" id="resultsSection" style="display: none;">
+        <div class="success-message" style="margin-bottom: 24px;">
+          所有文档已生成完成
+        </div>
+        <div class="result-tabs">
+          <div class="result-tab active" onclick="showResultTab(0)">软件概述</div>
+          <div class="result-tab" onclick="showResultTab(1)">设计说明书</div>
+        </div>
+        <div class="result-card">
+          <div class="result-card-header">
+            <div class="result-card-title" id="resultTitle">软件概述</div>
+            <div class="result-card-actions">
+              <button class="btn btn-secondary" style="padding:8px 16px;font-size:11px" onclick="copyCurrentResult()">复制</button>
+            </div>
+          </div>
+          <div class="result-card-body">
+            <pre id="resultContent0"></pre>
+            <pre id="resultContent1" style="display:none"></pre>
+          </div>
+        </div>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 16px;">
+          <button class="btn btn-success" id="btnDlOverview" onclick="downloadDocx('overview')" disabled>下载软件概述.docx</button>
+          <button class="btn btn-success" id="btnDlDesign" onclick="downloadDocx('design')" disabled>下载设计说明书.docx</button>
+          <button class="btn btn-secondary" onclick="resetAll()">重新开始</button>
+        </div>
+        <p style="font-size:12px;color:#9B9590;margin-top:12px;font-family:'JetBrains Mono',monospace">提示：上传的 docx 文档中的图片将自动提取并嵌入生成的文档。</p>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+let currentStep = 0;
+let currentResultTab = 0;
+let uploadedFiles = [];
+let extractedImages = [];
+let extractedInfo = {};
+let results = ['', ''];
+let config = {
+  apiKey: localStorage.getItem('apiKey') || '',
+  model: localStorage.getItem('model') || 'doubao-seed-2-0-code'
+};
+
+const INFO_FIELDS_CORE = [
+  { key: 'software_name', label: '软件全称（含版本号）', wide: false, placeholder: '如：XX管理系统V1.0', required: true },
+  { key: 'short_name', label: '软件简称', wide: false, placeholder: '如：XX系统' },
+  { key: 'version', label: '版本号', wide: false, placeholder: 'V1.0', defaultVal: 'V1.0' },
+  { key: 'developer', label: '开发者/公司名称', wide: false, placeholder: '著作权人全称', required: true },
+  { key: 'completion_date', label: '开发完成日期', wide: false, placeholder: '如：2024年06月01日' },
+  { key: 'publish_date', label: '首次发表日期', wide: false, placeholder: '如：2024年06月15日' },
+  { key: 'purpose', label: '开发目的', wide: true, placeholder: '简述为什么开发这个软件，100字左右' },
+  { key: 'main_features', label: '主要功能描述', wide: true, placeholder: '列出软件的核心功能模块，每行一个', required: true },
+];
+
+const INFO_FIELDS_ADVANCED = [
+  { key: 'publish_location', label: '首次发表地点', wide: false, placeholder: '如：北京', defaultVal: '中国' },
+  { key: 'programming_langs', label: '编程语言', wide: false, placeholder: '如：Java、Python', defaultVal: 'Java' },
+  { key: 'source_lines', label: '源程序量（行）', wide: false, placeholder: '如：15000', defaultVal: '12000' },
+  { key: 'dev_os', label: '开发操作系统', wide: false, placeholder: '如：Windows 11', defaultVal: 'Windows 11 64位' },
+  { key: 'dev_tools', label: '开发工具/IDE', wide: false, placeholder: '如：IntelliJ IDEA 2024', defaultVal: 'IntelliJ IDEA' },
+  { key: 'run_platform', label: '运行平台', wide: false, placeholder: '如：Windows/Linux/Web', defaultVal: 'Windows/Linux' },
+  { key: 'runtime_env', label: '运行支撑环境', wide: false, placeholder: '如：JDK 17、MySQL 8.0', defaultVal: 'JDK 17' },
+  { key: 'dev_hardware', label: '开发硬件环境', wide: true, placeholder: '如：Intel Core i7处理器，16GB内存，512GB SSD', defaultVal: 'Intel Core i7处理器，16GB内存，512GB SSD硬盘' },
+  { key: 'architecture', label: '技术架构', wide: true, placeholder: '如：B/S架构，前后端分离，微服务' },
+  { key: 'industry', label: '面向领域/行业', wide: false, placeholder: '如：企业管理、教育、医疗', defaultVal: '通用' },
+  { key: 'team_members_raw', label: '项目人员（可选，格式：姓名|职务）', wide: true, placeholder: '张三|项目经理\n李四|开发工程师（无人员信息可留空）' },
+];
+
+const INFO_FIELDS = [...INFO_FIELDS_CORE, ...INFO_FIELDS_ADVANCED];
+
+function init() {
+  if (config.apiKey) {
+    document.getElementById('apiKey').value = config.apiKey;
+    document.getElementById('modelSelect').value = config.model;
+    updateStepStatus(0, 'completed');
+    enableStep(1);
+    goToStep(1);
+  }
+  setupDragDrop();
+}
+
+function setupDragDrop() {
+  const zone = document.getElementById('uploadZone');
+  zone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    zone.classList.add('dragover');
+  });
+  zone.addEventListener('dragleave', () => {
+    zone.classList.remove('dragover');
+  });
+  zone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    zone.classList.remove('dragover');
+    handleFiles(e.dataTransfer.files);
+  });
+}
+
+function handleFileSelect(event) {
+  handleFiles(event.target.files);
+}
+
+function handleFiles(files) {
+  for (const file of files) {
+    if (!file) continue;
+    const ext = file.name.toLowerCase().split('.').pop();
+    if (!['doc', 'docx', 'pdf'].includes(ext)) {
+      alert(`${file.name} 格式不支持，请上传 .doc, .docx 或 .pdf 格式的文件`);
+      continue;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      alert(`${file.name} 大小超过 10MB，请选择较小的文件`);
+      continue;
+    }
+    if (!uploadedFiles.find(f => f.name === file.name)) {
+      uploadedFiles.push(file);
+    }
+  }
+  renderFileList();
+  document.getElementById('processBtn').disabled = uploadedFiles.length === 0;
+}
+
+function renderFileList() {
+  const container = document.getElementById('fileList');
+  if (uploadedFiles.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+  container.innerHTML = uploadedFiles.map((file, index) => `
+    <div class="file-item">
+      <div class="file-item-icon">📄</div>
+      <div class="file-item-name">${file.name}</div>
+      <div class="file-item-size">${formatSize(file.size)}</div>
+      <button class="file-item-remove" onclick="removeFile(${index})">×</button>
+    </div>
+  `).join('');
+}
+
+function formatSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function removeFile(index) {
+  uploadedFiles.splice(index, 1);
+  renderFileList();
+  document.getElementById('processBtn').disabled = uploadedFiles.length === 0;
+}
+
+function saveConfig() {
+  const apiKey = document.getElementById('apiKey').value.trim();
+  const model = document.getElementById('modelSelect').value;
+  if (!apiKey) {
+    alert('请输入API密钥');
+    return;
+  }
+  config.apiKey = apiKey;
+  config.model = model;
+  localStorage.setItem('apiKey', apiKey);
+  localStorage.setItem('model', model);
+  updateStepStatus(0, 'completed');
+  enableStep(1);
+  goToStep(1);
+}
+
+function goToStep(step) {
+  document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.step-item').forEach(n => n.classList.remove('active'));
+  document.getElementById(`panel-${step}`).classList.add('active');
+  document.getElementById(`step-${step}`).classList.add('active');
+  currentStep = step;
+}
+
+function enableStep(step) {
+  document.getElementById(`step-${step}`).classList.remove('disabled');
+}
+
+function updateStepStatus(step, status) {
+  const statusEl = document.getElementById(`status-${step}`);
+  const stepEl = document.getElementById(`step-${step}`);
+  statusEl.className = 'step-status ' + status;
+  stepEl.classList.remove('completed', 'active');
+  if (status === 'completed') {
+    stepEl.classList.add('completed');
+    statusEl.textContent = '完成';
+  } else if (status === 'loading') {
+    statusEl.textContent = '处理中';
+  } else if (status === 'error') {
+    statusEl.textContent = '错误';
+  } else {
+    statusEl.textContent = '待处理';
+  }
+}
+
+function updateProgressStep(prefix, stepIndex, status) {
+  const step = document.getElementById(`${prefix}-${stepIndex}`);
+  if (step) step.className = 'progress-step ' + status;
+  const statusTextId = prefix === 'eps' ? 'extractStatusText' : 'genStatusText';
+  const statusTextEl = document.getElementById(statusTextId);
+  if (statusTextEl && step) {
+    const text = step.querySelector('.progress-step-text').textContent;
+    if (status === 'active') {
+      statusTextEl.textContent = text + '...';
+    } else if (status === 'completed') {
+      statusTextEl.textContent = text + ' ✓';
+    }
+  }
+}
+
+function updateProgressBar(id, percent) {
+  document.getElementById(id).style.width = percent + '%';
+  const percentageId = id === 'extractProgressBar' ? 'extractPercentage' : 'genPercentage';
+  const percentageEl = document.getElementById(percentageId);
+  if (percentageEl) {
+    percentageEl.textContent = percent + '%';
+  }
+}
+
+async function parseDocument(file) {
+  const ext = file.name.toLowerCase().split('.').pop();
+  const arrayBuffer = await file.arrayBuffer();
+  
+  if (ext === 'pdf') {
+    return await parsePDF(arrayBuffer);
+  } else if (ext === 'docx' || ext === 'doc') {
+    const buf2 = arrayBuffer.slice(0);
+    const result = await mammoth.extractRawText({ arrayBuffer });
+    
+    try {
+      const zip = await JSZip.loadAsync(buf2);
+      const relsFile = zip.file('word/_rels/document.xml.rels');
+      let imageMap = {};
+      if (relsFile) {
+        const relsXml = await relsFile.async('string');
+        const matches = [...relsXml.matchAll(/Id="(rId[^"]+)"[^>]*Target="media\/([^"]+)"/g)];
+        matches.forEach(m => { imageMap[m[1]] = m[2]; });
+      }
+      
+      const mediaFiles = Object.keys(zip.files).filter(name => name.startsWith('word/media/') && !name.endsWith('/'));
+      if (mediaFiles.length > 0) {
+        const docFile = zip.file('word/document.xml');
+        let docXml = '';
+        if (docFile) docXml = await docFile.async('string');
+        
+        const paraMatches = [...docXml.matchAll(/<w:p[ >][\s\S]*?<\/w:p>/g)];
+        const paragraphs = [];
+        
+        for (let i = 0; i < paraMatches.length; i++) {
+          const p = paraMatches[i][0];
+          const text = p.replace(/<[^>]+>/g, '').trim();
+          
+          const isBold = p.includes('<w:b/>') || p.includes('<w:b ');
+          const isNumbered = /^[\d]+[\.\、\s]/.test(text) || /^[一二三四五六七八九十]+[\.\、\s]/.test(text);
+          const isHeadingStyle = /w:val="Heading\d?"/.test(p) || /w:val="标题\d?"/.test(p) || /w:val="TOC/.test(p);
+          const szMatch = p.match(/w:sz="(\d+)"/);
+          const isLargeFont = szMatch && parseInt(szMatch[1]) >= 28;
+          const hasPStyleHeading = /pStyle.*?w:val="[^"]*[Hh]eading/.test(p) || /pStyle.*?w:val="[^"]*标题/.test(p);
+          
+          const isTitle = hasPStyleHeading || isHeadingStyle || isLargeFont || (isBold && text.length > 0 && text.length < 50) || (isNumbered && text.length > 0 && text.length < 60);
+          
+          const rids = [...p.matchAll(/r:embed="(rId[^"]+)"/g)].map(m => m[1]);
+          
+          paragraphs.push({
+            index: i,
+            text: text,
+            isTitle: isTitle,
+            rids: rids
+          });
+        }
+        
+        const orderedImages = [];
+        for (const para of paragraphs) {
+          for (const rid of para.rids) {
+            if (imageMap[rid]) {
+              const fname = imageMap[rid];
+              if (!orderedImages.find(img => img.fname === fname)) {
+                let sectionTitle = '';
+                let paraText = para.text;
+                
+                // 策略 1：向前查找最近的标题（50 个段落内）
+                for (let j = para.index; j >= Math.max(0, para.index - 50); j--) {
+                  if (paragraphs[j].isTitle && paragraphs[j].text) {
+                    const title = paragraphs[j].text;
+                    // 检查标题是否是功能模块相关的（包含数字编号或功能关键词）
+                    if (/^[\d]+[\.\、]/.test(title) || /功能 | 模块 | 界面 | 页面 | 设置 | 管理/.test(title)) {
+                      sectionTitle = title;
+                      break;
+                    }
+                  }
+                }
+                
+                // 策略 2：如果没找到，向前查找包含功能关键词的段落
+                if (!sectionTitle) {
+                  for (let j = para.index; j >= Math.max(0, para.index - 30); j--) {
+                    const text = paragraphs[j].text;
+                    if (text && (text.includes('功能') || text.includes('模块') || text.includes('界面'))) {
+                      sectionTitle = text.substring(0, 50);
+                      break;
+                    }
+                  }
+                }
+                
+                // 策略 3：使用段落本身的文字作为 section
+                if (!sectionTitle && paraText && paraText.length > 5 && paraText.length < 100) {
+                  sectionTitle = paraText.substring(0, 50);
+                }
+                
+                orderedImages.push({
+                  fname: fname,
+                  paraIndex: para.index,
+                  title: sectionTitle,
+                  text: paraText
+                });
+              }
+            }
+          }
+        }
+        
+        for (const imgInfo of orderedImages) {
+          const fname = imgInfo.fname;
+          const mediaPath = 'word/media/' + fname;
+          const ext2 = fname.split('.').pop().toLowerCase();
+          if (!['png','jpg','jpeg','gif','bmp','webp'].includes(ext2)) continue;
+          if (extractedImages.find(img => img.name === fname && img.from === file.name)) continue;
+          
+          const imgFile = zip.file(mediaPath);
+          if (!imgFile) continue;
+          
+          const imgData = await imgFile.async('base64');
+          const mime = ext2 === 'jpg' || ext2 === 'jpeg' ? 'image/jpeg' : ext2 === 'gif' ? 'image/gif' : 'image/png';
+          
+          extractedImages.push({ 
+            name: fname, 
+            b64: imgData, 
+            mime, 
+            section: imgInfo.title || '',
+            paraIndex: imgInfo.paraIndex,
+            from: file.name 
+          });
+        }
+      }
+    } catch(imgErr) {
+      console.error('图片提取失败:', imgErr);
+    }
+    
+    return result.value || '';
+  }
+  throw new Error('不支持的文件格式');
+}
+
+async function parsePDF(arrayBuffer) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  let text = '';
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    text += content.items.map(item => item.str).join(' ') + '\n';
+  }
+  return text;
+}
+
+async function extractInfo() {
+  const paste = document.getElementById('pasteText').value.trim();
+  if (!uploadedFiles.length && !paste) {
+    alert('请上传文件或粘贴文档内容');
+    return;
+  }
+  
+  updateStepStatus(1, 'completed');
+  enableStep(2);
+  goToStep(2);
+  
+  document.getElementById('extractProgress').style.display = 'block';
+  updateProgressStep('eps', 0, 'active');
+  updateProgressBar('extractProgressBar', 20);
+  
+  try {
+    let content = paste;
+    if (uploadedFiles.length) {
+      extractedImages = [];
+      const fileTexts = [];
+      for (let i = 0; i < uploadedFiles.length; i++) {
+        const text = await parseDocument(uploadedFiles[i]);
+        fileTexts.push(`【${uploadedFiles[i].name}】\n${text}`);
+      }
+      content = fileTexts.join('\n\n---\n\n') + (paste ? '\n\n---\n\n' + paste : '');
+      
+      if (extractedImages.length > 0) {
+        document.getElementById('imgTip').textContent = '已提取 ' + extractedImages.length + ' 张图片，将自动嵌入生成的docx';
+      }
+    }
+    
+    updateProgressStep('eps', 0, 'completed');
+    updateProgressBar('extractProgressBar', 50);
+    updateProgressStep('eps', 1, 'active');
+    
+    const sys = '你是中国软件著作权申请专家，擅长从项目文档中提取软著申请所需信息。请严格按照用户要求的 JSON 格式返回，不要包含任何 markdown 代码块标记。';
+    
+    const raw = await callLLM([
+      { role: 'system', content: sys },
+      { role: 'user', content: `请从以下文档内容中提取软著申请信息，只返回 JSON 对象，不要任何其他内容：
+
+{"software_name":"软件全称(含版本号)","short_name":"简称","version":"V1.0","developer":"公司/开发者","completion_date":"2024年XX月XX日","publish_date":"2024年XX月XX日","publish_location":"北京","programming_langs":"语言列表","source_lines":"行数","dev_os":"操作系统","dev_tools":"开发工具","run_platform":"运行平台","runtime_env":"支撑环境","dev_hardware":"硬件描述","purpose":"开发目的100字","main_features":"主要功能200字","architecture":"技术架构100字","industry":"面向行业","team_members_raw":"项目人员信息，仅当文档中明确包含人员姓名、职务等信息时才填写，格式：姓名|职务|参与时间|研究阶段|开发阶段，多人用换行分隔。如果文档中没有人员信息，请留空，不要编造任何内容"}
+
+重要规则：
+1. 找不到的字段填写"待填写"
+2. team_members_raw字段：只有文档中明确写了人员姓名和职务才能填写，否则必须留空，绝对不能编造任何人员信息
+
+文档内容：
+${content.slice(0, 6000)}` }
+    ], 2000);
+    
+    updateProgressStep('eps', 1, 'completed');
+    updateProgressBar('extractProgressBar', 100);
+    
+    const clean = raw.replace(/```json|```/g, '').trim();
+    try {
+      extractedInfo = JSON.parse(clean);
+    } catch {
+      extractedInfo = {};
+      INFO_FIELDS.forEach(f => {
+        const m = raw.match(new RegExp(`"${f.key}"\\s*:\\s*"([^"]+)"`));
+        if (m) extractedInfo[f.key] = m[1];
+      });
+    }
+    
+    renderInfoForm();
+    updateStepStatus(2, 'completed');
+    document.getElementById('btnGenerate').disabled = false;
+    setTimeout(() => {
+      document.getElementById('extractProgress').style.display = 'none';
+    }, 500);
+    
+  } catch (error) {
+    console.error('提取错误:', error);
+    updateStepStatus(2, 'error');
+    showError(error.message || '提取失败');
+  }
+}
+
+function renderInfoForm() {
+  INFO_FIELDS.forEach(f => {
+    const val = extractedInfo[f.key];
+    if (f.defaultVal && (!val || val === '待填写')) {
+      extractedInfo[f.key] = f.defaultVal;
+    }
+  });
+  const container = document.getElementById('infoForm');
+  function renderField(f) {
+    const val = extractedInfo[f.key] || '';
+    const isAutoFilled = f.defaultVal && val === f.defaultVal;
+    const classes = ['form-group'];
+    if (f.wide) classes.push('field-wide');
+    if (f.required) classes.push('field-required');
+    if (isAutoFilled) classes.push('field-auto-filled');
+    const autoTag = isAutoFilled ? '<span class="field-auto-tag">自动填充</span>' : '';
+    const ph = f.placeholder ? ' placeholder="' + escapeHtml(f.placeholder) + '"' : '';
+    if (f.wide) {
+      return '<div class="' + classes.join(' ') + '"><label>' + f.label + autoTag + '</label><textarea id="inf_' + f.key + '" rows="3"' + ph + '>' + val + '</textarea></div>';
+    }
+    return '<div class="' + classes.join(' ') + '"><label>' + f.label + autoTag + '</label><input type="text" id="inf_' + f.key + '" value="' + escapeHtml(val) + '"' + ph + '></div>';
+  }
+  const autoCount = INFO_FIELDS_ADVANCED.filter(f => f.defaultVal && extractedInfo[f.key] === f.defaultVal).length;
+  let html = '';
+  html += '<div class="info-section-title">核心信息</div>';
+  html += INFO_FIELDS_CORE.map(renderField).join('');
+  html += '<div class="advanced-toggle" onclick="toggleAdvanced(this)"><span class="toggle-arrow">▶</span> 环境与技术参数<span class="toggle-count">' + autoCount + ' 项已自动填充，可展开修改</span></div>';
+  html += '<div class="advanced-fields" id="advancedFields">';
+  html += INFO_FIELDS_ADVANCED.map(renderField).join('');
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function toggleAdvanced(el) {
+  el.classList.toggle('open');
+  document.getElementById('advancedFields').classList.toggle('open');
+}
+
+function collectInfo() {
+  INFO_FIELDS.forEach(f => {
+    const el = document.getElementById(`inf_${f.key}`);
+    if (el) {
+      let val = el.value.trim();
+      if (!val && f.defaultVal) val = f.defaultVal;
+      extractedInfo[f.key] = val;
+    }
+  });
+}
+
+async function generateAll() {
+  collectInfo();
+  updateStepStatus(2, 'completed');
+  enableStep(3);
+  goToStep(3);
+  
+  results = ['', ''];
+  document.getElementById('genProgress').style.display = 'block';
+  document.getElementById('resultsSection').style.display = 'none';
+  
+  const tasks = [
+    { label: '软件概述', pct: 50, fn: genOverview, idx: 0 },
+    { label: '设计说明书', pct: 100, fn: genDesignSpec, idx: 1 },
+  ];
+  
+  for (let i = 0; i < tasks.length; i++) {
+    const t = tasks[i];
+    updateProgressStep('gps', i, 'active');
+    updateProgressBar('genProgressBar', Math.max(i * 50, 10));
+    
+    try {
+      results[t.idx] = await t.fn(extractedInfo);
+    } catch (e) {
+      results[t.idx] = `【生成失败】${e.message}`;
+    }
+    
+    updateProgressStep('gps', i, 'completed');
+    document.getElementById(`resultContent${t.idx}`).textContent = results[t.idx];
+  }
+  
+  updateProgressBar('genProgressBar', 100);
+  updateStepStatus(3, 'completed');
+  
+  setTimeout(() => {
+    document.getElementById('genProgress').style.display = 'none';
+    document.getElementById('resultsSection').style.display = 'block';
+    document.getElementById('btnDlOverview').disabled = false;
+    document.getElementById('btnDlDesign').disabled = false;
+  }, 500);
+}
+
+async function genOverview(info) {
+  const sys = '你是中国软件著作权登记申请材料撰写专家。请严格按照官方要求的软件概述格式输出，语言正式规范，符合软著申报标准。';
+  const prompt = `请根据以下信息，生成一份符合官方要求的软著登记【软件概述】文档。
+
+【官方要求】
+1. 硬件环境：指开发和运行登记软件的计算机硬件和专用设备
+2. 软件环境：指开发和运行登记软件的操作系统、支持软件的名称及版本号
+3. 编程语言：指编写需要登记软件的编程语言，如：VC6.0，VB6.0等
+4. 源程序量：指登记软件的源程序的总行数，单位为"行"。用阿拉伯数字填写（如：15000行）
+5. 主要功能和技术特点：简明阐述软件的研发目的、主要功能、用途和技术特点
+6. 开发完成时间以及首次发表时间
+
+【输出格式要求】
+严格按照以下字段顺序输出，每个字段单独一行，格式为"字段名：内容"：
+
+软件全称：（含版本号）
+软件简称：
+版本号：
+软件分类：应用软件
+软件说明：①原创；②修改（含翻译软件、合成软件）①原创
+开发方式：单独开发
+开发完成日期：（须在首次发表日期之前或同一天）
+首次发表日期：（可酌情提前，以使得软件得到更好的保护）
+首次发表地点：
+开发的硬件环境：（详细描述开发和运行软件的计算机硬件配置）
+运行的硬件环境：（详细描述运行软件的计算机硬件配置）
+开发该软件的操作系统：（操作系统名称及版本）
+软件开发环境/开发工具：（开发工具名称及版本）
+该软件的运行平台/操作系统：（运行平台及操作系统版本）
+软件运行支撑环境/支持软件：（支撑环境及支持软件名称版本）
+编程语言：（编程语言名称及版本，如没有版本号可不填）
+源程序量：（阿拉伯数字，如：15000行）
+主要功能和技术特点：
+（简明阐述软件的研发目的、主要功能、用途和技术特点，300字以上）
+
+【待生成软件信息】
+软件全称：${info.software_name}
+软件简称：${info.short_name}
+版本号：${info.version}
+开发者/公司：${info.developer}
+开发完成日期：${info.completion_date}
+首次发表日期：${info.publish_date}
+首次发表地点：${info.publish_location}
+开发硬件环境：${info.dev_hardware}
+运行硬件环境：${info.dev_hardware}
+开发操作系统：${info.dev_os}
+开发工具：${info.dev_tools}
+运行平台：${info.run_platform}
+运行支撑环境：${info.runtime_env}
+编程语言：${info.programming_langs}
+源程序量：${info.source_lines}行
+开发目的：${info.purpose}
+主要功能：${info.main_features}
+技术架构：${info.architecture}
+
+【重要规则】
+1. 严格按照上述字段顺序输出，不要添加任何标题或额外说明
+2. 开发完成日期须在首次发表日期之前或同一天
+3. 源程序量用阿拉伯数字表示，如：15000行
+4. "主要功能和技术特点"字段需简明阐述软件的研发目的、主要功能、用途和技术特点，300字以上
+5. 语言正式规范，符合软著申报标准`;
+  return callLLM([{role:'system',content:sys},{role:'user',content:prompt}], 3000);
+}
+
+async function genDesignSpec(info) {
+  const sys = '你是中国软件著作权登记申请材料撰写专家，擅长撰写规范的软著设计说明书。请生成结构完整、内容详实的设计说明书，符合真实软著申请规范。绝对不能编造任何人员信息。';
+  
+  const teamMembersRaw = info.team_members_raw || '';
+  const hasRealMembers = teamMembersRaw.trim() && teamMembersRaw !== '待填写' && teamMembersRaw.split('\n').some(l => l.trim());
+  
+  const imageSections = extractedImages.map(img => img.section).filter(s => s && s.trim());
+  const imageSectionsText = imageSections.length > 0 ? `\n\n【原文档中的功能模块/章节标题（按顺序）】\n${imageSections.map((s, i) => `${i + 1}. ${s}`).join('\n')}\n\n请严格按照上述模块顺序生成功能章节，确保第N个 [WIREFRAME] 对应第N个模块的截图。` : '';
+  
+  const prompt = `请根据以下软件信息，生成一份完整的软著登记【设计说明书】。
+${imageSectionsText}
+
+【重要格式要求 - 必须严格遵守】
+1. 所有章节标题必须使用标准 Markdown 格式：
+   - 一级章节用 ## 开头，例如：## 1. 项目背景
+   - 二级章节用 ### 开头，例如：### 5.1 功能模块名称
+2. 标题行不能包含 ** 加粗符号，只能是 ## 或 ### 加空格加标题文字
+3. 正文内容可以正常书写，但标题行格式必须严格符合上述规则
+
+【章节结构要求】
+## 1. 项目背景
+（描述软件背景和开发目的，200字以上）
+
+## 2. 项目目标
+本阶段目标是可实现：功能1、功能2...
+
+产品功能架构图：
+[ARCHITECTURE_IMAGE]
+
+表1 系统功能目标
+| 序号 | 名称 | 功能 |
+|------|------|------|
+| 1 | 功能1 | 描述 |
+
+## 3. 项目范围
+软件名称所有需求
+
+## 4. 项目时间表
+${hasRealMembers ? '（使用提供的人员信息生成表格）' : '人员分工待实际项目确定'}
+
+## 5. 需求描述及界面展示
+
+### 5.1 功能模块一名称
+User story
+作为XXX，我需要XXX功能，以便XXX
+
+acceptance criteria
+- 验收标准1
+- 验收标准2
+- 验收标准3
+- 验收标准4
+- 验收标准5
+
+wireframe
+[WIREFRAME]
+
+### 5.2 功能模块二名称
+（以此类推，每个功能模块后都有 [WIREFRAME] 占位符）
+
+【待生成软件信息】
+软件名称：${info.software_name}
+开发公司：${info.developer}
+版本号：${info.version}
+完成日期：${info.completion_date}
+编程语言：${info.programming_langs}
+开发工具：${info.dev_tools}
+运行平台：${info.run_platform}
+技术架构：${info.architecture}
+主要功能模块：${info.main_features}
+开发目的/项目背景：${info.purpose}
+${hasRealMembers ? `\n项目人员信息（从文档真实提取）：\n${teamMembersRaw}` : ''}
+
+【内容规则】
+1. 总字数 5000 字以上，内容要详细充实
+2. 功能模块数量与原文档一致（${imageSections.length > 0 ? imageSections.length + '个' : '根据主要功能描述确定'}）
+3. 每个模块必须有完整的 User Story 和至少 5 条验收标准，验收标准要具体详细
+4. 每个功能模块的描述要包括：功能说明、操作流程、界面元素、数据处理逻辑等，每个模块至少 300 字
+5. 每个功能模块末尾必须添加 [WIREFRAME] 占位符（单独一行）
+6. 项目目标章节的架构图位置添加 [ARCHITECTURE_IMAGE] 占位符（单独一行）
+7. 表格用文本格式表示（用 | 分隔列）
+8. 语言专业正式，符合软著申请规范
+${hasRealMembers ? `9. 项目时间表的人员分工表格必须使用上面提供的真实人员信息` : `9. 【严禁编造】文档中没有提供人员信息，项目时间表章节只需说明"人员分工待实际项目确定"，绝对不能编造任何姓名！`}
+10. 再次强调：标题格式只能是 "## 数字。标题" 或 "### 数字。数字 标题"，绝对不能有 ** 符号
+11. 功能模块名称要与原文档保持一致，不要简化或修改
+12. User Story 要具体描述用户角色、操作和目的，不要泛泛而谈
+13. 验收标准要具体可测量，包含具体的输入输出、界面元素、交互逻辑等`;
+
+  return callLLM([{role:'system',content:sys},{role:'user',content:prompt}], 8000);
+}
+
+async function callLLM(messages, maxTokens = 3000) {
+  const response = await fetch('http://localhost:3000/proxy', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      apiKey: config.apiKey,
+      model: config.model,
+      max_tokens: maxTokens,
+      messages: messages
+    })
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ error: { message: 'API请求失败' } }));
+    const errorMsg = typeof errorData.error === 'string' 
+      ? errorData.error 
+      : (errorData.error?.message || JSON.stringify(errorData.error) || 'API请求失败');
+    throw new Error(errorMsg);
+  }
+  const data = await response.json();
+  if (!data.choices?.[0]) throw new Error('返回格式异常');
+  return data.choices[0].message.content;
+}
+
+function showResultTab(idx) {
+  currentResultTab = idx;
+  document.getElementById('resultContent0').style.display = idx === 0 ? '' : 'none';
+  document.getElementById('resultContent1').style.display = idx === 1 ? '' : 'none';
+  document.getElementById('resultTitle').textContent = idx === 0 ? '软件概述' : '设计说明书';
+  document.querySelectorAll('.result-tab').forEach((tab, i) => {
+    tab.className = 'result-tab' + (i === idx ? ' active' : '');
+  });
+}
+
+function copyCurrentResult() {
+  const text = results[currentResultTab];
+  if (!text) return;
+  navigator.clipboard.writeText(text).then(() => {
+    alert('已复制到剪贴板');
+  });
+}
+
+async function downloadDocx(type) {
+  const btn = document.getElementById(type === 'overview' ? 'btnDlOverview' : 'btnDlDesign');
+  const origText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '生成中...';
+  
+  const rawMembers = (extractedInfo.team_members_raw || '').split('\n').filter(l => l.trim() && l !== '待填写');
+  const teamMembers = rawMembers.map(line => {
+    const parts = line.split('|');
+    return { name: parts[0]||'', role: parts[1]||'', period: parts[2]||'', research: parts[3]||'', dev: parts[4]||'' };
+  });
+  
+  const payload = {
+    type,
+    info: { ...extractedInfo, team_members: teamMembers },
+    content: type === 'overview' ? results[0] : results[1],
+    images: extractedImages,
+  };
+  
+  try {
+    const res = await fetch('http://localhost:3000/generate-docx', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: '生成失败' }));
+      throw new Error(err.error || '生成失败');
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = type === 'overview' ? '软件概述.docx' : '设计说明书.docx';
+    a.click();
+    URL.revokeObjectURL(url);
+    btn.textContent = '已下载';
+    setTimeout(() => { btn.textContent = origText; btn.disabled = false; }, 2000);
+  } catch(e) {
+    alert('下载失败：' + e.message + '（请确认 proxy.js 正在运行）');
+    btn.textContent = origText;
+    btn.disabled = false;
+  }
+}
+
+function showError(message) {
+  alert('错误: ' + message);
+}
+
+function resetAll() {
+  uploadedFiles = [];
+  extractedImages = [];
+  extractedInfo = {};
+  results = ['', ''];
+  renderFileList();
+  document.getElementById('pasteText').value = '';
+  document.getElementById('imgTip').textContent = '';
+  document.getElementById('processBtn').disabled = true;
+  document.getElementById('genProgress').style.display = 'block';
+  document.getElementById('resultsSection').style.display = 'none';
+  document.getElementById('btnDlOverview').disabled = true;
+  document.getElementById('btnDlDesign').disabled = true;
+  document.getElementById('btnGenerate').disabled = true;
+  updateProgressStep('gps', 0, '');
+  updateProgressStep('gps', 1, '');
+  updateProgressBar('genProgressBar', 0);
+  updateStepStatus(1, 'pending');
+  updateStepStatus(2, 'pending');
+  updateStepStatus(3, 'pending');
+  document.getElementById('step-1').classList.add('disabled');
+  document.getElementById('step-2').classList.add('disabled');
+  document.getElementById('step-3').classList.add('disabled');
+  goToStep(1);
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text || '';
+  return div.innerHTML;
+}
+
+init();
+</script>
+</body>
+</html>
