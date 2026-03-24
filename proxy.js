@@ -76,7 +76,7 @@ const PROVIDERS = {
   minimax: {
     name: 'MiniMax',
     baseURL: 'api.minimax.chat',
-    apiPath: '/v1/text/chatcompletion_v2',
+    apiPath: '/v1/text/chatcompletion',
     headers: (apiKey) => ({
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${apiKey}`
@@ -170,6 +170,9 @@ function callProviderAPI(providerKey, apiKey, body, callback) {
 
 function testAPIConnection(providerKey, apiKey, model, callback) {
   const provider = PROVIDERS[providerKey];
+  if (!provider) {
+    return callback(new Error(`未知的提供商: ${providerKey}`));
+  }
   const testModel = model || provider.testModel;
   
   const testBody = {

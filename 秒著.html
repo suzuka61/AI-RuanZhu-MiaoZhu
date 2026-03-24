@@ -754,17 +754,25 @@ textarea {
 }
 
 .info-grid {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-lg);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
   padding: var(--space-md) 0;
 }
 
 .info-grid .field-wide {
-  width: 100%;
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 768px) {
+  .info-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-sm);
+  }
 }
 
 .info-section-title {
+  grid-column: 1 / -1;
   width: 100%;
   display: flex;
   align-items: center;
@@ -789,6 +797,7 @@ textarea {
 }
 
 .advanced-toggle {
+  grid-column: 1 / -1;
   width: 100%;
   display: flex;
   align-items: center;
@@ -830,6 +839,7 @@ textarea {
 }
 
 .advanced-fields {
+  grid-column: 1 / -1;
   width: 100%;
   display: none;
   flex-direction: column;
@@ -1065,25 +1075,22 @@ textarea {
         <span class="tip-box-strong">node proxy.js</span>（与 HTML 文件同目录）<br>
         <span class="tip-box-small">代理运行在 localhost:3000，解决浏览器跨域限制</span>
       </div>
+      <!-- API 设置区域 -->
       <div class="form-group">
-        <label>API 提供商</label>
-        <select id="providerSelect" onchange="updateModelForProvider()">
-          <option value="volcengine">火山引擎方舟</option>
-          <option value="deepseek">DeepSeek</option>
-          <option value="zhipu">智谱 GLM</option>
-          <option value="moonshot">月之暗面 Kimi</option>
-          <option value="minimax">MiniMax</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>API Key</label>
-        <input type="password" id="apiKey" placeholder="输入您的API密钥"/>
-      </div>
-      <!-- 模型选择已移除，使用提供商默认模型 -->
-      <div class="form-group">
-        <button class="btn btn-secondary" onclick="testAPIConnection()" id="testBtn" style="width: 100%;">
-          🔌 测试 API 连接
-        </button>
+        <label>API 设置</label>
+        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+          <select id="providerSelect" onchange="updateModelForProvider()" style="width: 140px; flex-shrink: 0;">
+            <option value="volcengine">火山引擎方舟</option>
+            <option value="deepseek">DeepSeek</option>
+            <option value="zhipu">智谱 GLM</option>
+            <option value="moonshot">月之暗面 Kimi</option>
+            <option value="minimax">MiniMax</option>
+          </select>
+          <input type="password" id="apiKey" placeholder="输入您的API密钥" style="flex: 1; min-width: 200px;"/>
+          <button class="btn btn-secondary" onclick="testAPIConnection()" id="testBtn" style="flex-shrink: 0; padding: 16px 20px; font-size: 13px;">
+            测试连接
+          </button>
+        </div>
       </div>
       <div id="testResult" class="test-result" style="display: none;"></div>
       <div class="mt-24">
