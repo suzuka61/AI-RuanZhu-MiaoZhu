@@ -82,14 +82,14 @@ body::before {
 }
 
 .header {
-  margin-bottom: var(--space-2xl);
+  margin-bottom: 20px;
   padding: var(--space-2xl) 0;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 300px;
+  min-height: 280px;
 }
 
 .header-label {
@@ -103,7 +103,7 @@ body::before {
 
 .header h1 {
   font-family: 'Fraunces', serif;
-  font-size: 42px;
+  font-size: 50px;
   font-weight: 700;
   letter-spacing: -0.02em;
   line-height: 1.15;
@@ -116,7 +116,7 @@ body::before {
 }
 
 .header-subtitle {
-  font-size: 14px;
+  font-size: 16px;
   color: var(--text-muted);
   font-weight: 500;
   line-height: 1.5;
@@ -126,6 +126,7 @@ body::before {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: var(--space-sm);
+  margin-top: 20px;
   margin-bottom: var(--space-lg);
 }
 
@@ -635,6 +636,8 @@ textarea {
   color: white;
   border-color: var(--color-moss);
   background: var(--color-moss);
+  font-size: 14px;
+  font-weight: bold;
 }
 
 .progress-step-text {
@@ -717,14 +720,14 @@ textarea {
 }
 
 .stream-preview-content {
-  height: 96px;
+  height: 140px;
   overflow: hidden;
   position: relative;
   padding: var(--space-md);
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 .preview-line {
@@ -1056,6 +1059,54 @@ textarea {
   font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
 }
 
+.disclaimer {
+  background: linear-gradient(135deg, #FFF9E6 0%, #FFF3CD 100%);
+  border: 1px solid #FFE082;
+  border-radius: var(--radius-md);
+  padding: 6px 10px;
+  margin-top: 16px;
+  font-size: 10px;
+  color: #856404;
+  line-height: 1.5;
+  position: relative;
+}
+
+.disclaimer-close {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  width: 16px;
+  height: 16px;
+  background: rgba(133, 100, 4, 0.15);
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: #856404;
+  transition: all 0.2s ease;
+  line-height: 1;
+  padding-bottom: 1px;
+}
+
+.disclaimer-close:hover {
+  background: rgba(133, 100, 4, 0.3);
+}
+
+.disclaimer-content {
+  padding-right: 18px;
+}
+
+.disclaimer p {
+  margin: 0 0 3px 0;
+}
+
+.disclaimer p:last-child {
+  margin-bottom: 0;
+}
+
 @media (max-width: 1024px) {
   .steps-horizontal {
     grid-template-columns: repeat(2, 1fr);
@@ -1191,13 +1242,15 @@ textarea {
             <option value="moonshot">月之暗面 Kimi</option>
             <option value="minimax">MiniMax</option>
           </select>
-          <input type="password" id="apiKey" placeholder="选择免费模型无需输入密钥" style="flex: 1; min-width: 200px;"/>
+          <input type="password" id="apiKey" placeholder="留空使用内置免费密钥，或输入您自己的密钥" style="flex: 1; min-width: 200px;"/>
           <button class="btn btn-secondary" onclick="testAPIConnection()" id="testBtn" style="flex-shrink: 0; padding: 16px 20px; font-size: 13px;">
             测试连接
           </button>
         </div>
-        <div id="freeModelTip" style="margin-top: 8px; font-size: 12px; color: var(--color-moss);">
-          ✨ 免费模型已内置API密钥，可直接使用，无需配置
+        <div id="freeModelTip" style="margin-top: 8px; font-size: 12px; color: var(--color-moss); line-height: 1.6;">
+          ✨ <strong>免费模型说明：</strong><br>
+          • 密钥框留空 → 自动使用内置免费密钥（推荐新手）<br>
+          • 输入自己的密钥 → 使用您在 OpenRouter 注册的 API 密钥
         </div>
       </div>
       <div id="testResult" class="test-result" style="display: none;"></div>
@@ -1219,7 +1272,7 @@ textarea {
       <div class="file-list" id="fileList"></div>
       <div class="mt-16">
         <label>或直接粘贴文档内容</label>
-        <textarea id="pasteText" placeholder="将文档内容粘贴到这里..."></textarea>
+        <textarea id="pasteText" placeholder="没有文档也没关系，用几句话描述你的产品即可，例如：&quot;我做了一个点餐小程序，顾客扫码点餐、在线支付，后台有菜单管理和订单统计，用微信小程序+Java开发，2个人做了3个月，公司叫XX科技...&quot; AI 会自动从描述中提取所需信息，不确定的字段可以在下一步手动补充。"></textarea>
       </div>
       <p id="imgTip" class="img-tip"></p>
       <div class="mt-24">
@@ -1299,14 +1352,6 @@ textarea {
             <div class="progress-step-text">生成设计说明书</div>
             <div class="progress-step-word-count" id="gps-1-count"></div>
           </div>
-          <div class="progress-step" id="gps-2">
-            <div class="progress-step-icon"></div>
-            <div class="progress-step-text">文档格式校验</div>
-          </div>
-          <div class="progress-step" id="gps-3">
-            <div class="progress-step-icon"></div>
-            <div class="progress-step-text">准备下载</div>
-          </div>
         </div>
       </div>
       <div class="results-section" id="resultsSection" style="display: none;">
@@ -1344,6 +1389,15 @@ textarea {
         <span style="font-size: 24px;">📋</span> 最近生成的项目
       </h3>
       <div id="historyList" style="display: flex; flex-direction: column; gap: 12px;"></div>
+    </div>
+
+    <!-- 免责声明 -->
+    <div class="disclaimer" id="disclaimerBox">
+      <button class="disclaimer-close" onclick="document.getElementById('disclaimerBox').style.display='none'" title="关闭">×</button>
+      <div class="disclaimer-content">
+        <p><strong>仅供学习参考：</strong>本工具生成的文档内容仅供参考和学习使用，不构成任何法律建议或专业意见。</p>
+        <p><strong>人工核对必需：</strong>生成的文档必须经过人工审核和修改，确保内容真实、准确、完整后再提交使用。</p>
+      </div>
     </div>
 
   </div>
@@ -1401,6 +1455,296 @@ const INFO_FIELDS_ADVANCED = [
 
 const INFO_FIELDS = [...INFO_FIELDS_CORE, ...INFO_FIELDS_ADVANCED];
 
+// 软件类型模板库
+const SOFTWARE_TEMPLATES = {
+  '管理系统': {
+    keywords: ['管理', '系统', 'ERP', 'CRM', 'OA', 'HRM', '进销存', '仓储', '财务'],
+    config: {
+      programming_langs: 'Java',
+      dev_tools: 'IntelliJ IDEA 2024',
+      run_platform: 'Windows/Linux',
+      runtime_env: 'JDK 17, MySQL 8.0, Redis 7.0, Nginx',
+      dev_hardware: 'Intel Core i7处理器，16GB内存，512GB SSD硬盘',
+      architecture: 'B/S架构，前后端分离，Spring Boot + Vue3 + Element Plus',
+      source_lines: '15000'
+    },
+    content_templates: {
+      purpose: '为{行业领域}提供信息化管理解决方案，实现{核心业务}的数字化管理，提高工作效率，降低运营成本，促进企业现代化转型。',
+      features: [
+        '用户权限管理：支持多角色权限控制，实现细粒度的功能权限和数据权限管理，确保系统安全性',
+        '数据统计分析：提供多维度数据报表和可视化图表，支持自定义统计维度，辅助管理决策',
+        '流程审批管理：实现业务流程自动化，支持多级审批、会签、转办等功能，提高办公效率',
+        '基础信息管理：维护{行业领域}相关的基础数据，支持数据的增删改查、导入导出等操作',
+        '系统日志管理：记录用户操作日志和系统运行日志，支持日志查询和审计追踪'
+      ]
+    }
+  },
+  '微信小程序': {
+    keywords: ['小程序', '微信', '扫码', '点餐', '预约', '商城小程序'],
+    config: {
+      programming_langs: 'JavaScript/TypeScript',
+      dev_tools: '微信开发者工具',
+      run_platform: '微信小程序平台',
+      runtime_env: '微信小程序基础库 3.0+',
+      dev_hardware: 'Intel Core i5处理器，8GB内存，256GB SSD硬盘',
+      architecture: 'MVVM架构，小程序原生开发 + 云开发',
+      source_lines: '8000'
+    },
+    content_templates: {
+      purpose: '为{用户群体}提供便捷的{核心功能}服务，通过微信小程序实现移动端快速操作，提升用户体验，降低使用门槛。',
+      features: [
+        '扫码功能：支持扫描二维码快速识别，实现快速登录、快速下单等操作，提升用户体验',
+        '在线支付：集成微信支付功能，支持多种支付方式，实现便捷安全的在线交易',
+        '消息推送：通过微信模板消息和订阅消息，实时推送订单状态、活动通知等信息',
+        '个人中心：管理个人信息、历史记录、收藏夹等，提供个性化服务体验',
+        '社交分享：支持分享到微信好友和朋友圈，扩大传播范围，提升用户粘性'
+      ]
+    }
+  },
+  '移动APP': {
+    keywords: ['APP', '应用', 'Android', 'iOS', '手机', '移动端'],
+    config: {
+      programming_langs: 'Java/Kotlin (Android) 或 Swift (iOS) 或 Flutter',
+      dev_tools: 'Android Studio / Xcode / VS Code',
+      run_platform: 'Android 10+ / iOS 13+',
+      runtime_env: 'Android SDK / iOS SDK / Flutter SDK',
+      dev_hardware: 'Intel Core i7处理器，16GB内存，512GB SSD硬盘',
+      architecture: 'MVC/MVVM架构，原生开发或跨平台开发',
+      source_lines: '20000'
+    },
+    content_templates: {
+      purpose: '为{用户群体}提供移动端{核心功能}服务，实现随时随地的便捷使用，满足移动互联网时代的用户需求。',
+      features: [
+        '离线功能：支持离线使用核心功能，本地缓存数据，提升用户体验和网络适应性',
+        '推送通知：集成推送服务，实时推送消息通知，保持用户活跃度和信息触达',
+        '地图定位：集成地图服务，提供位置定位、导航、周边搜索等位置相关功能',
+        '相机相册：支持拍照、录像、图片选择等功能，满足多媒体内容采集需求',
+        '社交分享：支持分享到微信、微博等社交平台，扩大内容传播范围'
+      ]
+    }
+  },
+  '网站平台': {
+    keywords: ['网站', '平台', '门户', '官网', '商城', '电商'],
+    config: {
+      programming_langs: 'JavaScript/TypeScript',
+      dev_tools: 'VS Code',
+      run_platform: 'Web浏览器',
+      runtime_env: 'Node.js 18+, Nginx, MySQL 8.0',
+      dev_hardware: 'Intel Core i7处理器，16GB内存，512GB SSD硬盘',
+      architecture: 'B/S架构，前后端分离，React/Vue + Node.js/Java',
+      source_lines: '12000'
+    },
+    content_templates: {
+      purpose: '为{用户群体}提供{核心功能}信息服务，实现线上展示、交互和交易，构建互联网服务生态。',
+      features: [
+        '响应式设计：采用响应式布局，适配PC、平板、手机等多种设备，提升访问体验',
+        '内容管理：支持内容的发布、编辑、删除、分类、标签等管理功能，方便内容维护',
+        '用户交互：提供评论、点赞、收藏、分享等互动功能，增强用户参与度',
+        'SEO优化：优化页面结构和内容，提升搜索引擎排名，提高网站曝光度',
+        '数据分析：集成数据分析工具，统计用户访问行为，为运营决策提供数据支持'
+      ]
+    }
+  },
+  '教育系统': {
+    keywords: ['教育', '学习', '培训', '课程', '考试', '在线教育', '学校'],
+    config: {
+      programming_langs: 'Java/Python',
+      dev_tools: 'IntelliJ IDEA / PyCharm',
+      run_platform: 'Windows/Linux/Web',
+      runtime_env: 'JDK 17, MySQL 8.0, Redis, FFmpeg',
+      dev_hardware: 'Intel Core i7处理器，16GB内存，512GB SSD硬盘',
+      architecture: 'B/S架构，前后端分离，支持视频流媒体服务',
+      source_lines: '18000'
+    },
+    content_templates: {
+      purpose: '为教育机构和学习者提供在线学习平台，实现课程管理、在线学习、考试测评等功能，促进教育信息化发展。',
+      features: [
+        '课程管理：支持课程创建、分类、发布、下架等全生命周期管理，支持视频、文档等多种资源类型',
+        '在线学习：提供视频播放、进度记录、笔记标注、互动问答等学习功能，支持移动端学习',
+        '考试测评：支持在线考试、自动阅卷、成绩统计、错题分析等功能，实现学习效果评估',
+        '学习追踪：记录学习进度、学习时长、学习行为等数据，生成学习报告和个性化推荐',
+        '互动社区：提供讨论区、问答区、直播课堂等互动功能，促进师生交流'
+      ]
+    }
+  },
+  '医疗健康系统': {
+    keywords: ['医疗', '医院', '健康', '诊疗', '挂号', '病历', '问诊'],
+    config: {
+      programming_langs: 'Java',
+      dev_tools: 'IntelliJ IDEA 2024',
+      run_platform: 'Windows/Linux',
+      runtime_env: 'JDK 17, MySQL 8.0, Redis, Nginx',
+      dev_hardware: 'Intel Core i7处理器，16GB内存，512GB SSD硬盘',
+      architecture: 'B/S架构，前后端分离，符合医疗数据安全标准',
+      source_lines: '25000'
+    },
+    content_templates: {
+      purpose: '为医疗机构和患者提供数字化医疗服务，实现预约挂号、在线问诊、病历管理等功能，提升医疗服务效率和质量。',
+      features: [
+        '预约挂号：支持在线预约挂号、排队查询、号源管理等功能，优化就诊流程',
+        '在线问诊：提供图文问诊、视频问诊、处方开具等远程医疗服务，方便患者就医',
+        '病历管理：实现电子病历的创建、存储、查询、共享等功能，确保医疗数据安全',
+        '健康档案：建立个人健康档案，记录就诊历史、检查报告、用药记录等健康信息',
+        '数据分析：提供医疗数据统计分析、疾病趋势分析等功能，辅助医疗决策'
+      ]
+    }
+  },
+  '金融系统': {
+    keywords: ['金融', '银行', '支付', '理财', '贷款', '保险', '交易'],
+    config: {
+      programming_langs: 'Java',
+      dev_tools: 'IntelliJ IDEA 2024',
+      run_platform: 'Linux',
+      runtime_env: 'JDK 17, Oracle/MySQL, Redis, Kafka',
+      dev_hardware: 'Intel Xeon处理器，32GB内存，1TB SSD硬盘',
+      architecture: '微服务架构，分布式部署，符合金融安全标准',
+      source_lines: '30000'
+    },
+    content_templates: {
+      purpose: '为金融机构和用户提供安全可靠的金融服务，实现账户管理、交易处理、风险控制等功能，保障金融业务合规运营。',
+      features: [
+        '账户管理：支持多类型账户管理、账户开立、销户、冻结等操作，确保账户安全',
+        '交易处理：实现转账、支付、充值、提现等交易功能，支持高并发交易处理',
+        '风险控制：集成风险评估、反欺诈、合规检查等风控功能，保障交易安全',
+        '资金清算：提供资金清算、对账、结算等功能，确保资金流转准确',
+        '报表统计：生成各类金融报表，支持监管报送和内部管理分析'
+      ]
+    }
+  },
+  '物流系统': {
+    keywords: ['物流', '快递', '配送', '仓储', '运输', '供应链'],
+    config: {
+      programming_langs: 'Java',
+      dev_tools: 'IntelliJ IDEA 2024',
+      run_platform: 'Windows/Linux',
+      runtime_env: 'JDK 17, MySQL 8.0, Redis, RabbitMQ',
+      dev_hardware: 'Intel Core i7处理器，16GB内存，512GB SSD硬盘',
+      architecture: 'B/S架构，前后端分离，支持移动端APP',
+      source_lines: '20000'
+    },
+    content_templates: {
+      purpose: '为物流企业和客户提供物流信息化管理服务，实现订单管理、仓储管理、配送跟踪等功能，提升物流运营效率。',
+      features: [
+        '订单管理：支持订单录入、分配、跟踪、签收等全流程管理，实现订单状态实时更新',
+        '仓储管理：提供入库、出库、盘点、库存预警等仓储管理功能，优化库存周转',
+        '配送管理：实现配送路线规划、配送员调度、配送状态跟踪等功能，提高配送效率',
+        '轨迹追踪：集成地图服务，实时追踪货物位置，提供可视化轨迹展示',
+        '数据分析：统计物流数据，生成运营报表，支持决策分析和成本优化'
+      ]
+    }
+  },
+  '物联网系统': {
+    keywords: ['物联网', 'IoT', '智能', '设备', '传感器', '监控', '智能家居'],
+    config: {
+      programming_langs: 'Java/Python/C++',
+      dev_tools: 'IntelliJ IDEA / PyCharm / VS Code',
+      run_platform: 'Linux/Windows',
+      runtime_env: 'JDK 17, MQTT Broker, InfluxDB, Grafana',
+      dev_hardware: 'Intel Core i7处理器，16GB内存，512GB SSD硬盘',
+      architecture: '物联网三层架构，设备层+平台层+应用层',
+      source_lines: '22000'
+    },
+    content_templates: {
+      purpose: '为物联网应用提供设备管理、数据采集、远程控制等功能，实现设备互联互通，构建智能化应用场景。',
+      features: [
+        '设备管理：支持设备注册、配置、监控、固件升级等设备全生命周期管理',
+        '数据采集：通过MQTT等协议采集设备数据，支持多种数据格式和采集频率',
+        '实时监控：实时展示设备状态、运行数据，支持告警规则配置和告警通知',
+        '远程控制：实现设备远程控制、场景联动、自动化任务等功能',
+        '数据分析：对设备数据进行存储、分析和可视化展示，支持数据导出和报表生成'
+      ]
+    }
+  },
+  '通用软件': {
+    keywords: [],
+    config: {
+      programming_langs: 'Java',
+      dev_tools: 'IntelliJ IDEA',
+      run_platform: 'Windows/Linux',
+      runtime_env: 'JDK 17, MySQL 8.0',
+      dev_hardware: 'Intel Core i7处理器，16GB内存，512GB SSD硬盘',
+      architecture: 'B/S架构，前后端分离',
+      source_lines: '12000'
+    },
+    content_templates: {
+      purpose: '为用户提供{核心功能}服务，实现业务流程数字化，提高工作效率，降低运营成本。',
+      features: [
+        '用户管理：支持用户注册、登录、权限管理等功能，确保系统安全性',
+        '数据管理：提供数据的增删改查、导入导出、备份恢复等功能',
+        '查询统计：支持多条件查询和数据统计分析，辅助用户决策',
+        '系统设置：提供系统参数配置、日志管理、数据字典等功能',
+        '帮助文档：提供系统使用说明和操作指南，降低用户学习成本'
+      ]
+    }
+  }
+};
+
+// 匹配软件类型模板
+function matchSoftwareTemplate(softwareName, briefDesc = '') {
+  const text = (softwareName + ' ' + briefDesc).toLowerCase();
+  
+  for (const [type, template] of Object.entries(SOFTWARE_TEMPLATES)) {
+    if (template.keywords && template.keywords.length > 0) {
+      if (template.keywords.some(keyword => text.includes(keyword.toLowerCase()))) {
+        return { type, template };
+      }
+    }
+  }
+  
+  return { type: '通用软件', template: SOFTWARE_TEMPLATES['通用软件'] };
+}
+
+// 使用模板补充信息
+function fillInfoWithTemplate(extractedInfo, template) {
+  const filled = { ...extractedInfo };
+  const config = template.config;
+  const contentTmpl = template.content_templates;
+  
+  // 补充技术配置字段
+  if (!filled.programming_langs || filled.programming_langs === '待填写') {
+    filled.programming_langs = config.programming_langs;
+  }
+  if (!filled.dev_tools || filled.dev_tools === '待填写') {
+    filled.dev_tools = config.dev_tools;
+  }
+  if (!filled.run_platform || filled.run_platform === '待填写') {
+    filled.run_platform = config.run_platform;
+  }
+  if (!filled.runtime_env || filled.runtime_env === '待填写') {
+    filled.runtime_env = config.runtime_env;
+  }
+  if (!filled.dev_hardware || filled.dev_hardware === '待填写') {
+    filled.dev_hardware = config.dev_hardware;
+  }
+  if (!filled.architecture || filled.architecture === '待填写') {
+    filled.architecture = config.architecture;
+  }
+  if (!filled.source_lines || filled.source_lines === '待填写') {
+    filled.source_lines = config.source_lines;
+  }
+  
+  // 补充描述性字段（如果用户输入很短）
+  if (!filled.purpose || filled.purpose.length < 50) {
+    const softwareName = filled.software_name || '';
+    const purposeTmpl = contentTmpl.purpose;
+    
+    // 简单的模板填充逻辑
+    let purpose = purposeTmpl
+      .replace('{行业领域}', '企业')
+      .replace('{核心业务}', '业务')
+      .replace('{用户群体}', '用户')
+      .replace('{核心功能}', '核心业务');
+    
+    filled.purpose = purpose;
+  }
+  
+  if (!filled.main_features || filled.main_features.length < 50) {
+    filled.main_features = contentTmpl.features.join('\n');
+  }
+  
+  return filled;
+}
+
 function init() {
   setupDragDrop();
   renderHistory();
@@ -1443,13 +1787,13 @@ function updateModelForProvider() {
   const freeTip = document.getElementById('freeModelTip');
   
   if (PROVIDER_FREE_KEYS[provider]) {
-    apiKeyInput.placeholder = '免费模型无需输入密钥';
-    apiKeyInput.disabled = true;
-    apiKeyInput.style.opacity = '0.5';
-    apiKeyInput.style.backgroundColor = 'var(--color-stone)';
+    apiKeyInput.placeholder = '留空使用内置免费密钥，或输入您自己的密钥';
+    apiKeyInput.disabled = false;
+    apiKeyInput.style.opacity = '1';
+    apiKeyInput.style.backgroundColor = '';
     if (freeTip) freeTip.style.display = 'block';
   } else {
-    apiKeyInput.placeholder = '输入您的API密钥';
+    apiKeyInput.placeholder = '请输入您的 API 密钥（必填）';
     apiKeyInput.disabled = false;
     apiKeyInput.style.opacity = '1';
     apiKeyInput.style.backgroundColor = '';
@@ -1464,6 +1808,7 @@ async function testAPIConnection() {
   const testBtn = document.getElementById('testBtn');
   const testResult = document.getElementById('testResult');
   
+  // 对于免费提供商，允许空密钥（会自动使用内置密钥）
   if (!apiKey && !PROVIDER_FREE_KEYS[provider]) {
     testResult.style.display = 'block';
     testResult.className = 'test-result error';
@@ -1471,6 +1816,7 @@ async function testAPIConnection() {
     return;
   }
   
+  // 免费提供商且用户未输入密钥时，使用内置密钥
   if (!apiKey && PROVIDER_FREE_KEYS[provider]) {
     apiKey = PROVIDER_FREE_KEYS[provider];
   }
@@ -1641,7 +1987,17 @@ function updateStepStatus(step, status) {
 
 function updateProgressStep(prefix, stepIndex, status) {
   const step = document.getElementById(`${prefix}-${stepIndex}`);
-  if (step) step.className = 'progress-step ' + status;
+  if (step) {
+    step.className = 'progress-step ' + status;
+    const icon = step.querySelector('.progress-step-icon');
+    if (icon) {
+      if (status === 'completed') {
+        icon.innerHTML = '✓';
+      } else {
+        icon.innerHTML = '';
+      }
+    }
+  }
   const statusTextId = prefix === 'eps' ? 'extractStatusText' : 'genStatusText';
   const statusTextEl = document.getElementById(statusTextId);
   if (statusTextEl && step) {
@@ -1846,13 +2202,24 @@ async function extractInfo() {
     
     const raw = await callLLM([
       { role: 'system', content: sys },
-      { role: 'user', content: `请从以下文档内容中提取软著申请信息，只返回 JSON 对象，不要任何其他内容：
+      { role: 'user', content: `请从以下文档内容中提取软著申请信息。如果信息不足，请根据软件类型和行业惯例进行合理补充扩写，确保每个字段内容达到软著申请要求的规范程度。
 
+返回JSON格式：
 {"software_name":"软件全称(含版本号)","short_name":"简称","version":"V1.0","developer":"公司/开发者","completion_date":"2024年XX月XX日","publish_date":"2024年XX月XX日","publish_location":"北京","programming_langs":"语言列表","source_lines":"行数","dev_os":"操作系统","dev_tools":"开发工具","run_platform":"运行平台","runtime_env":"支撑环境","dev_hardware":"硬件描述","purpose":"开发目的100字","main_features":"主要功能200字","architecture":"技术架构100字","industry":"面向行业","team_members_raw":"项目人员信息，仅当文档中明确包含人员姓名、职务等信息时才填写，格式：姓名|职务|参与时间|研究阶段|开发阶段，多人用换行分隔。如果文档中没有人员信息，请留空，不要编造任何内容"}
 
-重要规则：
-1. 找不到的字段填写"待填写"
-2. team_members_raw字段：只有文档中明确写了人员姓名和职务才能填写，否则必须留空，绝对不能编造任何人员信息
+【重要规则】
+1. 提取优先：优先从文档中提取真实信息
+2. 智能补充：如果文档信息不足，根据软件名称和类型进行合理推测补充：
+   - 技术性字段（编程语言、开发工具、运行环境等）：根据软件类型使用行业通用配置
+   - 描述性字段（开发目的、主要功能）：根据软件名称和类型生成符合行业规范的内容
+   - 硬件环境：使用当前主流开发硬件配置
+   - 技术架构：根据软件类型推荐合适的架构模式
+3. 字数要求：
+   - 开发目的：至少100字，详细说明开发背景和目标
+   - 主要功能：至少200字，列出核心功能模块及简要说明
+   - 技术架构：至少50字，说明技术选型和架构特点
+4. 人员信息：team_members_raw字段只有文档中明确写了人员姓名和职务才能填写，否则必须留空，绝对不能编造
+5. 质量标准：所有补充内容要符合软著申请规范，语言正式专业
 
 文档内容：
 ${content.slice(0, 6000)}` }
@@ -1871,6 +2238,15 @@ ${content.slice(0, 6000)}` }
         if (m) extractedInfo[f.key] = m[1];
       });
     }
+    
+    // 使用模板补充缺失信息
+    const { type, template } = matchSoftwareTemplate(
+      extractedInfo.software_name || '',
+      extractedInfo.purpose || ''
+    );
+    
+    extractedInfo = fillInfoWithTemplate(extractedInfo, template);
+    extractedInfo.software_type = type;
     
     renderInfoForm();
     updateStepStatus(2, 'completed');
@@ -1910,7 +2286,6 @@ function renderInfoForm() {
   }
   const autoCount = INFO_FIELDS_ADVANCED.filter(f => f.defaultVal && extractedInfo[f.key] === f.defaultVal).length;
   let html = '';
-  html += '<div class="info-section-title">核心信息</div>';
   html += INFO_FIELDS_CORE.map(renderField).join('');
   html += '<div class="advanced-toggle" onclick="toggleAdvanced(this)"><span class="toggle-arrow">▶</span> 环境与技术参数<span class="toggle-count">' + autoCount + ' 项已自动填充，可展开修改</span></div>';
   html += '<div class="advanced-fields" id="advancedFields">';
@@ -1949,66 +2324,91 @@ async function generateAll() {
   document.getElementById('streamPreviewContainer').style.display = 'block';
   
   const tasks = [
-    { label: '软件概述', pct: 25, fn: genOverview, idx: 0, stepId: 'gps-0' },
-    { label: '设计说明书', pct: 75, fn: genDesignSpec, idx: 1, stepId: 'gps-1' },
+    { label: '软件概述', pct: 25, fn: genOverview, idx: 0, stepId: 'gps-0', estimatedMinutes: 2 },
+    { label: '设计说明书', pct: 75, fn: genDesignSpec, idx: 1, stepId: 'gps-1', estimatedMinutes: 5 },
   ];
   
   let totalElapsed = 0;
   const startTime = Date.now();
+  let remainingTimeInterval = null;
   
-  for (let i = 0; i < tasks.length; i++) {
-    const t = tasks[i];
-    updateProgressStep('gps', i, 'active');
-    updateProgressBar('genProgressBar', Math.max(i * 25, 5));
-    
-    const taskStartTime = Date.now();
-    
-    try {
-      results[t.idx] = await t.fn(extractedInfo, (content, wordCount) => {
-        updateStreamPreview(content, wordCount);
-        const countEl = document.getElementById(`gps-${t.idx}-count`);
-        if (countEl) countEl.textContent = `· ${wordCount} 字`;
-      });
-    } catch (e) {
-      results[t.idx] = `【生成失败】${e.message}`;
+  // 更新预估剩余时间的函数
+  const updateRemainingTime = () => {
+    const tasksRemaining = tasks.length - i;
+    let estimatedRemaining = 0;
+    for (let j = i; j < tasks.length; j++) {
+      estimatedRemaining += tasks[j].estimatedMinutes;
+    }
+    // 加上当前任务的剩余时间（按比例估算）
+    if (i < tasks.length && currentTaskElapsed > 0) {
+      const currentTaskEstimated = tasks[i].estimatedMinutes * 60; // 转换为秒
+      const currentTaskProgress = Math.min(currentTaskElapsed / currentTaskEstimated, 1);
+      estimatedRemaining = Math.ceil((tasksRemaining - 1) * 2 + (1 - currentTaskProgress) * tasks[i].estimatedMinutes);
+    } else {
+      estimatedRemaining = Math.ceil(tasksRemaining * 3);
+    }
+    estimatedRemaining = Math.max(estimatedRemaining, 1);
+    document.getElementById('genRemainingTime').textContent = estimatedRemaining;
+  };
+  
+  // 启动定时器更新预估时间
+  remainingTimeInterval = setInterval(updateRemainingTime, 3000);
+  
+  let i = 0;
+  let currentTaskElapsed = 0;
+  let currentTaskStartTime = Date.now();
+  
+  try {
+    for (; i < tasks.length; i++) {
+      const t = tasks[i];
+      currentTaskStartTime = Date.now();
+      currentTaskElapsed = 0;
+      
+      updateProgressStep('gps', i, 'active');
+      updateProgressBar('genProgressBar', Math.max(i * 50, 5));
+      
+      try {
+        results[t.idx] = await t.fn(extractedInfo, (content, wordCount) => {
+          updateStreamPreview(content, wordCount);
+          const countEl = document.getElementById(`gps-${t.idx}-count`);
+          if (countEl) countEl.textContent = `· ${wordCount} 字`;
+          currentTaskElapsed = (Date.now() - currentTaskStartTime) / 1000;
+        });
+      } catch (e) {
+        results[t.idx] = `【生成失败】${e.message}`;
+      }
+      
+      const taskElapsed = (Date.now() - currentTaskStartTime) / 1000;
+      totalElapsed += taskElapsed;
+      
+      updateProgressStep('gps', i, 'completed');
+      document.getElementById(`resultContent${t.idx}`).textContent = results[t.idx];
+      
+      const countEl = document.getElementById(`gps-${t.idx}-count`);
+      if (countEl) countEl.textContent = `· ${results[t.idx].length} 字`;
     }
     
-    const taskElapsed = (Date.now() - taskStartTime) / 1000;
-    totalElapsed += taskElapsed;
+    if (remainingTimeInterval) {
+      clearInterval(remainingTimeInterval);
+      remainingTimeInterval = null;
+    }
     
-    updateProgressStep('gps', i, 'completed');
-    document.getElementById(`resultContent${t.idx}`).textContent = results[t.idx];
+    updateProgressBar('genProgressBar', 100);
+    updateStepStatus(3, 'completed');
     
-    const countEl = document.getElementById(`gps-${t.idx}-count`);
-    if (countEl) countEl.textContent = `· ${results[t.idx].length} 字`;
+    document.getElementById('genEstimatedTime').style.display = 'none';
+    document.getElementById('streamPreviewContainer').style.display = 'none';
+    
+    setTimeout(() => {
+      document.getElementById('genProgress').style.display = 'none';
+      document.getElementById('resultsSection').style.display = 'block';
+      document.getElementById('btnDlOverview').disabled = false;
+      document.getElementById('btnDlDesign').disabled = false;
+    }, 300);
+  } catch (error) {
+    console.error('生成过程出错:', error);
+    alert('生成过程出错: ' + error.message);
   }
-  
-  updateProgressStep('gps', 2, 'active');
-  updateProgressBar('genProgressBar', 85);
-  document.getElementById('genStatusText').textContent = '文档格式校验中...';
-  
-  await new Promise(r => setTimeout(r, 500));
-  
-  updateProgressStep('gps', 2, 'completed');
-  updateProgressStep('gps', 3, 'active');
-  updateProgressBar('genProgressBar', 95);
-  document.getElementById('genStatusText').textContent = '准备下载...';
-  
-  await new Promise(r => setTimeout(r, 300));
-  
-  updateProgressStep('gps', 3, 'completed');
-  updateProgressBar('genProgressBar', 100);
-  updateStepStatus(3, 'completed');
-  
-  document.getElementById('genEstimatedTime').style.display = 'none';
-  document.getElementById('streamPreviewContainer').style.display = 'none';
-  
-  setTimeout(() => {
-    document.getElementById('genProgress').style.display = 'none';
-    document.getElementById('resultsSection').style.display = 'block';
-    document.getElementById('btnDlOverview').disabled = false;
-    document.getElementById('btnDlDesign').disabled = false;
-  }, 300);
 }
 
 async function genOverview(info, onChunk) {
@@ -2070,7 +2470,12 @@ async function genOverview(info, onChunk) {
 1. 严格按照上述字段顺序输出，不要添加任何标题或额外说明
 2. 开发完成日期须在首次发表日期之前或同一天
 3. 源程序量用阿拉伯数字表示，如：15000行
-4. "主要功能和技术特点"字段需简明阐述软件的研发目的、主要功能、用途和技术特点，300字以上
+4. "主要功能和技术特点"字段必须满足以下要求：
+   - 总字数不少于300字
+   - 必须包含：研发目的（50字+）、主要功能（150字+）、技术特点（100字+）
+   - 如果提供的"开发目的"字段少于200字，请根据软件类型和行业背景主动扩写
+   - 如果提供的"主要功能"字段少于200字，请详细展开功能模块和技术亮点
+   - 语言要专业正式，符合软著申报标准
 5. 语言正式规范，符合软著申报标准`;
   return callLLMStream([{role:'system',content:sys},{role:'user',content:prompt}], onChunk, 3000);
 }
@@ -2078,9 +2483,8 @@ async function genOverview(info, onChunk) {
 async function genDesignSpec(info, onChunk) {
   const sys = '你是中国软件著作权登记申请材料撰写专家，擅长撰写规范的软著设计说明书。请生成结构完整、内容详实的设计说明书，符合真实软著申请规范。绝对不能编造任何人员信息。';
   
-  const teamMembersRaw = info.team_members_raw || '';
+  const teamMembersRaw = typeof info.team_members_raw === 'string' ? info.team_members_raw : '';
   const hasRealMembers = teamMembersRaw.trim() && teamMembersRaw !== '待填写' && teamMembersRaw.split('\n').some(l => l.trim());
-  
   const imageSections = extractedImages.map(img => img.section).filter(s => s && s.trim());
   const imageSectionsText = imageSections.length > 0 ? `\n\n【原文档中的功能模块/章节标题（按顺序）】\n${imageSections.map((s, i) => `${i + 1}. ${s}`).join('\n')}\n\n请严格按照上述模块顺序生成功能章节，确保第N个 [WIREFRAME] 对应第N个模块的截图。` : '';
   
@@ -2096,7 +2500,7 @@ ${imageSectionsText}
 
 【章节结构要求】
 ## 1. 项目背景
-（描述软件背景和开发目的，200字以上）
+（描述软件背景和开发目的，200字以上。如果提供的信息不足200字，请根据软件类型和行业背景主动扩写）
 
 ## 2. 项目目标
 本阶段目标是可实现：功能1、功能2...
@@ -2160,7 +2564,11 @@ ${hasRealMembers ? `9. 项目时间表的人员分工表格必须使用上面提
 10. 再次强调：标题格式只能是 "## 数字。标题" 或 "### 数字。数字 标题"，绝对不能有 ** 符号
 11. 功能模块名称要与原文档保持一致，不要简化或修改
 12. User Story 要具体描述用户角色、操作和目的，不要泛泛而谈
-13. 验收标准要具体可测量，包含具体的输入输出、界面元素、交互逻辑等`;
+13. 验收标准要具体可测量，包含具体的输入输出、界面元素、交互逻辑等
+14. 【字数扩写规则】：
+    - 如果"开发目的/项目背景"字段少于200字，请根据软件类型和行业背景主动扩写
+    - 如果"主要功能模块"字段描述过于简短，请详细展开每个功能模块的具体功能点
+    - 确保每个功能模块的描述至少300字，包含功能说明、操作流程、界面元素等`;
 
   return callLLMStream([{role:'system',content:sys},{role:'user',content:prompt}], onChunk, 8000);
 }
@@ -2311,9 +2719,10 @@ async function downloadDocx(type) {
   btn.disabled = true;
   btn.textContent = '生成中...';
   
-  const rawMembers = (extractedInfo.team_members_raw || '').split('\n').filter(l => l.trim() && l !== '待填写');
+  const rawMembersValue = extractedInfo.team_members_raw || '';
+  const rawMembers = typeof rawMembersValue === 'string' ? rawMembersValue.split('\n').filter(l => l.trim() && l !== '待填写') : [];
   const teamMembers = rawMembers.map(line => {
-    const parts = line.split('|');
+    const parts = typeof line === 'string' ? line.split('|') : [];
     return { name: parts[0]||'', role: parts[1]||'', period: parts[2]||'', research: parts[3]||'', dev: parts[4]||'' };
   });
   
@@ -2493,35 +2902,41 @@ function initEncryptedText() {
   
   const originalText = 'AI 驱动 · 一键生成软件著作权申请材料';
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%^&*';
-  let iterations = 0;
-  const maxIterations = originalText.length;
   
-  function encrypt() {
-    if (iterations >= maxIterations) {
-      subtitle.textContent = originalText;
-      return;
+  function startAnimation() {
+    let iterations = 0;
+    const maxIterations = originalText.length;
+    
+    function encrypt() {
+      if (iterations >= maxIterations) {
+        subtitle.textContent = originalText;
+        setTimeout(startAnimation, 5000);
+        return;
+      }
+      
+      const encrypted = originalText
+        .split('')
+        .map((char, index) => {
+          if (index < iterations) {
+            return originalText[index];
+          }
+          if (char === ' ' || char === '·') {
+            return char;
+          }
+          return chars[Math.floor(Math.random() * chars.length)];
+        })
+        .join('');
+      
+      subtitle.textContent = encrypted;
+      iterations++;
+      
+      setTimeout(encrypt, 180);
     }
     
-    const encrypted = originalText
-      .split('')
-      .map((char, index) => {
-        if (index < iterations) {
-          return originalText[index];
-        }
-        if (char === ' ' || char === '·') {
-          return char;
-        }
-        return chars[Math.floor(Math.random() * chars.length)];
-      })
-      .join('');
-    
-    subtitle.textContent = encrypted;
-    iterations++;
-    
-    setTimeout(encrypt, 180);
+    encrypt();
   }
   
-  encrypt();
+  startAnimation();
 }
 
 // 初始化时渲染历史记录

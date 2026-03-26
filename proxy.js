@@ -891,6 +891,67 @@ async function buildDesignDocx(data) {
     return (txt || '').replace(/\*\*/g, '').replace(/\*/g, '').replace(/`/g, '').trim();
   }
 
+  function parseMarkdownTable(lines, startIndex) {
+    const tableLines = [];
+    let i = startIndex;
+    
+    while (i < lines.length) {
+      const trimmed = lines[i].trim();
+      if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
+        tableLines.push(trimmed);
+        i++;
+      } else if (trimmed.startsWith('|')) {
+        tableLines.push(trimmed + '|');
+        i++;
+      } else {
+        break;
+      }
+    }
+    
+    if (tableLines.length < 2) {
+      return { table: null, endIndex: startIndex };
+    }
+    
+    const rows = tableLines.map(line => {
+      const cells = line.split('|').map(c => c.trim()).filter(c => c !== '');
+      return cells;
+    });
+    
+    if (rows.length < 2) {
+      return { table: null, endIndex: startIndex };
+    }
+    
+    const headerRow = rows[0];
+    const dataRows = rows.slice(2).filter(row => row.length > 0 && row.some(cell => cell.length > 0));
+    
+    if (headerRow.length === 0) {
+      return { table: null, endIndex: startIndex };
+    }
+    
+    const colCount = headerRow.length;
+    const colWidth = Math.floor(10000 / colCount);
+    
+    const tableRows = [
+      new TableRow({
+        children: headerRow.map(h => makeHeaderCell(cleanMarkdown(h), colWidth))
+      }),
+      ...dataRows.map(row => 
+        new TableRow({
+          children: Array(colCount).fill(0).map((_, idx) => 
+            makeDataCell(cleanMarkdown(row[idx] || ''), colWidth)
+          )
+        })
+      )
+    ];
+    
+    const table = new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      rows: tableRows
+    });
+    
+    return { table, endIndex: i };
+  }
+
   function contentToParasWithImages(text, images) {
     const lines = (text||'').split('\n');
     const { mapping, unmatchedImgs } = matchImagesToPlaceholders(lines, images, archImg);
@@ -905,6 +966,17 @@ async function buildDesignDocx(data) {
           result.push(...makeImagePara(mapping[i].img, mapping[i].caption));
         }
         continue;
+      }
+      
+      if (trimmed.startsWith('|') && (trimmed.endsWith('|') || trimmed.split('|').length > 2)) {
+        const { table, endIndex } = parseMarkdownTable(lines, i);
+        if (table) {
+          result.push(new Paragraph({ spacing: { before: 120, after: 120 }, children: [] }));
+          result.push(table);
+          result.push(new Paragraph({ spacing: { after: 120 }, children: [] }));
+          i = endIndex - 1;
+          continue;
+        }
       }
       
       if (!trimmed) {
@@ -1047,8 +1119,8 @@ async function buildDesignDocx(data) {
       {
         properties: {
           ...pageProps,
-          headers: { ["default"]: emptyHF.header },
-          footers: { ["default"]: emptyHF.footer },
+          headers: { default: docHeader },
+          footers: { default: emptyHF.footer },
         },
         children: coverChildren,
       },
