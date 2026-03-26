@@ -69,6 +69,8 @@ npm run build:linux
 - **费用**：完全免费
 - 选择"OpenRouter (免费)"即可开始使用
 
+> ⚠️ **提示**：内置密钥有速率限制，如遇到限流，建议[注册自己的OpenRouter账号](https://openrouter.ai/)获取免费密钥，注册简单无需绑卡。
+
 ### 火山引擎方舟
 1. 访问：https://www.volcengine.com/
 2. 注册并登录
