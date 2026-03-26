@@ -13,6 +13,25 @@ const HTML_FILE = path.join(__dirname, '秒著.html');
 // 多模型提供商配置表
 // ═══════════════════════════════════════════════════════════════
 const PROVIDERS = {
+  openrouter: {
+    name: 'OpenRouter (免费)',
+    baseURL: 'openrouter.ai',
+    apiPath: '/api/v1/chat/completions',
+    headers: (apiKey) => ({
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+      'HTTP-Referer': 'http://localhost:3000',
+      'X-Title': 'MiaoZhu - AI Software Copyright Generator'
+    }),
+    formatRequest: (body) => ({
+      model: body.model,
+      messages: body.messages
+    }),
+    testModel: 'stepfun/step-3.5-flash:free',
+    isFree: true,
+    defaultApiKey: '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'
+  },
+
   volcengine: {
     name: '火山引擎方舟',
     baseURL: 'ark.cn-beijing.volces.com',
@@ -90,6 +109,7 @@ const PROVIDERS = {
 };
 
 const MODEL_PROVIDER_MAP = {
+  'stepfun/step-3.5-flash:free': 'openrouter',
   'doubao-seed-2-0-code': 'volcengine',
   'doubao-seed-2-0-pro': 'volcengine',
   'deepseek-chat': 'deepseek',
@@ -162,6 +182,87 @@ function callProviderAPI(providerKey, apiKey, body, callback) {
   req.on('error', (e) => {
     console.error(`[${new Date().toLocaleTimeString()}] ✗ ${provider.name} 请求失败:`, e.message);
     callback(new Error(`网络请求失败: ${e.message}`));
+  });
+
+  req.write(requestData);
+  req.end();
+}
+
+function callProviderAPIStream(providerKey, apiKey, body, res) {
+  const provider = PROVIDERS[providerKey];
+  if (!provider) {
+    res.write(`data: ${JSON.stringify({ error: `未知的提供商: ${providerKey}` })}\n\n`);
+    res.end();
+    return;
+  }
+
+  const requestBody = { ...provider.formatRequest(body), stream: true };
+  const requestData = JSON.stringify(requestBody);
+  const headers = provider.headers(apiKey);
+  
+  const options = {
+    hostname: provider.baseURL,
+    path: provider.apiPath,
+    method: 'POST',
+    headers: {
+      ...headers,
+      'Content-Length': Buffer.byteLength(requestData)
+    }
+  };
+
+  console.log(`[${new Date().toLocaleTimeString()}] → ${provider.name} Stream (${body.model})`);
+
+  const req = https.request(options, (aiRes) => {
+    console.log(`[${new Date().toLocaleTimeString()}] ← ${provider.name} Stream HTTP ${aiRes.statusCode}`);
+    
+    if (aiRes.statusCode >= 200 && aiRes.statusCode < 300) {
+      aiRes.on('data', (chunk) => {
+        const chunkStr = chunk.toString();
+        const lines = chunkStr.split('\n').filter(line => line.trim() !== '');
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6);
+            if (data === '[DONE]') {
+              res.write(`data: [DONE]\n\n`);
+            } else {
+              try {
+                const parsed = JSON.parse(data);
+                const content = parsed.choices?.[0]?.delta?.content || '';
+                if (content) {
+                  res.write(`data: ${JSON.stringify({ content, provider: providerKey })}\n\n`);
+                }
+              } catch (e) {
+                // 忽略解析错误，继续处理
+              }
+            }
+          }
+        }
+      });
+      
+      aiRes.on('end', () => {
+        console.log(`[${new Date().toLocaleTimeString()}] ✓ ${provider.name} Stream 完成`);
+        res.end();
+      });
+    } else {
+      let errorMsg = `HTTP ${aiRes.statusCode}`;
+      aiRes.on('data', (chunk) => {
+        try {
+          const errorData = JSON.parse(chunk.toString());
+          errorMsg = errorData.error?.message || errorData.message || errorMsg;
+        } catch (e) {}
+      });
+      aiRes.on('end', () => {
+        res.write(`data: ${JSON.stringify({ error: errorMsg })}\n\n`);
+        res.end();
+      });
+    }
+  });
+
+  req.on('error', (e) => {
+    console.error(`[${new Date().toLocaleTimeString()}] ✗ ${provider.name} Stream 请求失败:`, e.message);
+    res.write(`data: ${JSON.stringify({ error: `网络请求失败: ${e.message}` })}\n\n`);
+    res.end();
   });
 
   req.write(requestData);
@@ -486,6 +587,50 @@ function handleChatAPI(req, res) {
 
       sendJSON(res, 200, result);
     });
+  });
+}
+
+function handleChatStreamAPI(req, res) {
+  handleCORS(req, res);
+  
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'Access-Control-Allow-Origin': '*'
+  });
+
+  let body = '';
+  req.on('data', chunk => body += chunk);
+  req.on('end', () => {
+    try {
+      const parsed = JSON.parse(body);
+      const { apiKey, model, messages } = parsed;
+
+      if (!apiKey) {
+        res.write(`data: ${JSON.stringify({ error: '缺少API密钥' })}\n\n`);
+        res.end();
+        return;
+      }
+
+      if (!messages || !Array.isArray(messages)) {
+        res.write(`data: ${JSON.stringify({ error: 'messages 必须是数组' })}\n\n`);
+        res.end();
+        return;
+      }
+
+      const { providerKey } = getProviderConfig(model);
+
+      const requestBody = {
+        model: model,
+        messages: messages
+      };
+
+      callProviderAPIStream(providerKey, apiKey, requestBody, res);
+    } catch (e) {
+      res.write(`data: ${JSON.stringify({ error: '无效的JSON格式' })}\n\n`);
+      res.end();
+    }
   });
 }
 
@@ -862,20 +1007,32 @@ async function buildDesignDocx(data) {
     new Paragraph({ alignment: AlignmentType.CENTER, spacing: { before: 200, after: 400 }, children: [new TextRun({ text: '目录', bold: true, size: 32, font: '宋体' })] }),
   ];
 
-  if (uniqueTocItems.length === 0) {
-    tocChildren.push(new Paragraph({
-      spacing: { after: 120 },
-      children: [new TextRun({ text: '（目录内容将在正文中展示）', size: 22, font: '宋体', color: '999999' })]
-    }));
-  } else {
-    uniqueTocItems.forEach(item => {
-      tocChildren.push(new Paragraph({
-        spacing: { after: 120 },
-        indent: { left: item.level === 3 ? 400 : 0 },
-        children: [new TextRun({ text: item.title, size: item.level === 2 ? 24 : 22, font: '宋体', bold: item.level === 2 })]
-      }));
-    });
-  }
+  const { TableOfContents } = require('docx');
+  
+  const tocEntries = uniqueTocItems.map(item => ({
+    title: item.title,
+    level: item.level === 2 ? 1 : 2,
+  }));
+  
+  tocChildren.push(new TableOfContents('目录', {
+    hyperlink: true,
+    headingStyleRange: '2-3',
+    cachedEntries: tocEntries,
+  }));
+  
+  tocChildren.push(new Paragraph({ spacing: { before: 400, after: 100 }, children: [] }));
+  tocChildren.push(new Paragraph({
+    spacing: { after: 60 },
+    children: [new TextRun({ text: '【提示】如目录页码未显示，请按以下快捷键更新域：', size: 18, font: '宋体', color: '666666', italics: true })]
+  }));
+  tocChildren.push(new Paragraph({
+    spacing: { after: 60 },
+    children: [new TextRun({ text: 'Windows: Ctrl + A（全选）→ F9（更新域）', size: 18, font: '宋体', color: '666666' })]
+  }));
+  tocChildren.push(new Paragraph({
+    spacing: { after: 60 },
+    children: [new TextRun({ text: 'Mac: Cmd + A（全选）→ Fn + F9（更新域）', size: 18, font: '宋体', color: '666666' })]
+  }));
 
   const doc = new Document({
     features: { updateFields: true },
@@ -943,6 +1100,11 @@ const server = http.createServer((req, res) => {
   if (req.url === '/api/chat' && req.method === 'POST') {
     handleCORS(req, res);
     return handleChatAPI(req, res);
+  }
+
+  // 流式聊天 API 端点
+  if (req.url === '/api/chat/stream' && req.method === 'POST') {
+    return handleChatStreamAPI(req, res);
   }
 
   // 旧的 /proxy 端点（向后兼容）

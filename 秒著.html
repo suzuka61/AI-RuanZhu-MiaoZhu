@@ -38,6 +38,7 @@
   --space-md: calc(var(--unit) * 3);
   --space-lg: calc(var(--unit) * 4);
   --space-xl: calc(var(--unit) * 6);
+  --space-2xl: calc(var(--unit) * 8);
 }
 
 * {
@@ -652,6 +653,115 @@ textarea {
   color: var(--text-secondary);
 }
 
+.progress-step-word-count {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.progress-step.completed .progress-step-word-count {
+  color: var(--color-moss);
+}
+
+.progress-estimated-time {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin-top: var(--space-sm);
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--color-stone);
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.progress-estimated-time .time-icon {
+  font-size: 14px;
+}
+
+.stream-preview-container {
+  margin-top: var(--space-md);
+  margin-bottom: var(--space-md);
+  border: 1px solid var(--color-wood);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--bg-card);
+}
+
+.stream-preview-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-stone);
+  border-bottom: 1px solid var(--color-wood);
+}
+
+.stream-preview-header .preview-icon {
+  font-size: 14px;
+}
+
+.stream-preview-header .preview-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+}
+
+.stream-preview-header .preview-word-count {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--color-moss);
+  font-weight: 500;
+}
+
+.stream-preview-content {
+  height: 96px;
+  overflow: hidden;
+  position: relative;
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+}
+
+.preview-line {
+  font-size: 13px;
+  line-height: 1.8;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: all 0.3s ease;
+}
+
+.preview-line-top,
+.preview-line-bottom {
+  opacity: 0.35;
+  filter: blur(0.5px);
+  color: var(--text-muted);
+}
+
+.preview-line-middle {
+  opacity: 1;
+  filter: none;
+  font-weight: 500;
+}
+
+.preview-line-middle::after {
+  content: '▌';
+  animation: cursor-blink 1s infinite;
+  color: var(--color-moss);
+  margin-left: 2px;
+}
+
+@keyframes cursor-blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
 .results-section {
   margin-top: var(--space-md);
 }
@@ -1025,9 +1135,8 @@ textarea {
 <div class="app-container">
   <header class="header">
     <div class="header-left">
-      <div class="header-label">自动化系统</div>
       <h1>秒<span>著</span></h1>
-      <p class="header-subtitle">AI 驱动 · 一键生成软件著作权申请材料</p>
+      <p class="header-subtitle" id="encryptedSubtitle"></p>
     </div>
   </header>
   <div class="steps-horizontal">
@@ -1070,26 +1179,25 @@ textarea {
         <h2>模型配置</h2>
         <p>配置火山引擎API密钥以启用AI处理功能</p>
       </div>
-      <div class="tip-box">
-        使用前请先启动本地代理：<br>
-        <span class="tip-box-strong">node proxy.js</span>（与 HTML 文件同目录）<br>
-        <span class="tip-box-small">代理运行在 localhost:3000，解决浏览器跨域限制</span>
-      </div>
       <!-- API 设置区域 -->
       <div class="form-group">
         <label>API 设置</label>
         <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
-          <select id="providerSelect" onchange="updateModelForProvider()" style="width: 140px; flex-shrink: 0;">
+          <select id="providerSelect" onchange="updateModelForProvider()" style="width: 160px; flex-shrink: 0;">
+            <option value="openrouter">OpenRouter (免费)</option>
             <option value="volcengine">火山引擎方舟</option>
             <option value="deepseek">DeepSeek</option>
             <option value="zhipu">智谱 GLM</option>
             <option value="moonshot">月之暗面 Kimi</option>
             <option value="minimax">MiniMax</option>
           </select>
-          <input type="password" id="apiKey" placeholder="输入您的API密钥" style="flex: 1; min-width: 200px;"/>
+          <input type="password" id="apiKey" placeholder="选择免费模型无需输入密钥" style="flex: 1; min-width: 200px;"/>
           <button class="btn btn-secondary" onclick="testAPIConnection()" id="testBtn" style="flex-shrink: 0; padding: 16px 20px; font-size: 13px;">
             测试连接
           </button>
+        </div>
+        <div id="freeModelTip" style="margin-top: 8px; font-size: 12px; color: var(--color-moss);">
+          ✨ 免费模型已内置API密钥，可直接使用，无需配置
         </div>
       </div>
       <div id="testResult" class="test-result" style="display: none;"></div>
@@ -1161,14 +1269,43 @@ textarea {
         <div class="progress-bar-container">
           <div class="progress-bar" id="genProgressBar"></div>
         </div>
+        <div class="progress-estimated-time" id="genEstimatedTime" style="display: none;">
+          <span class="time-icon">⏱️</span>
+          <span class="time-text">预计剩余时间：约 <span id="genRemainingTime">1</span> 分钟</span>
+        </div>
+        
+        <!-- 实时预览区域 -->
+        <div class="stream-preview-container" id="streamPreviewContainer" style="display: none;">
+          <div class="stream-preview-header">
+            <span class="preview-icon">✨</span>
+            <span class="preview-title">实时预览</span>
+            <span class="preview-word-count" id="streamWordCount">0 字</span>
+          </div>
+          <div class="stream-preview-content" id="streamPreviewContent">
+            <div class="preview-line preview-line-top" id="previewLineTop"></div>
+            <div class="preview-line preview-line-middle" id="previewLineMiddle"></div>
+            <div class="preview-line preview-line-bottom" id="previewLineBottom"></div>
+          </div>
+        </div>
+        
         <div class="progress-steps">
           <div class="progress-step" id="gps-0">
             <div class="progress-step-icon"></div>
             <div class="progress-step-text">生成软件概述</div>
+            <div class="progress-step-word-count" id="gps-0-count"></div>
           </div>
           <div class="progress-step" id="gps-1">
             <div class="progress-step-icon"></div>
             <div class="progress-step-text">生成设计说明书</div>
+            <div class="progress-step-word-count" id="gps-1-count"></div>
+          </div>
+          <div class="progress-step" id="gps-2">
+            <div class="progress-step-icon"></div>
+            <div class="progress-step-text">文档格式校验</div>
+          </div>
+          <div class="progress-step" id="gps-3">
+            <div class="progress-step-icon"></div>
+            <div class="progress-step-text">准备下载</div>
           </div>
         </div>
       </div>
@@ -1219,18 +1356,22 @@ let extractedImages = [];
 let extractedInfo = {};
 let results = ['', ''];
 let config = {
-  apiKey: localStorage.getItem('apiKey') || '',
-  provider: localStorage.getItem('provider') || 'volcengine',
-  model: localStorage.getItem('model') || 'doubao-seed-2-0-code'
+  apiKey: '',
+  provider: 'openrouter',
+  model: 'stepfun/step-3.5-flash:free'
 };
 
-// 提供商默认模型配置
 const PROVIDER_DEFAULT_MODELS = {
+  openrouter: 'stepfun/step-3.5-flash:free',
   volcengine: 'doubao-seed-2-0-code',
   deepseek: 'deepseek-chat',
   zhipu: 'glm-4.7-thinking',
   moonshot: 'moonshot-v1-8k',
   minimax: 'MiniMax-Text-01'
+};
+
+const PROVIDER_FREE_KEYS = {
+  openrouter: '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'
 };
 
 const INFO_FIELDS_CORE = [
@@ -1261,38 +1402,77 @@ const INFO_FIELDS_ADVANCED = [
 const INFO_FIELDS = [...INFO_FIELDS_CORE, ...INFO_FIELDS_ADVANCED];
 
 function init() {
-  if (config.apiKey) {
-    document.getElementById('apiKey').value = config.apiKey;
-    document.getElementById('providerSelect').value = config.provider;
-    // 使用默认模型
-    config.model = PROVIDER_DEFAULT_MODELS[config.provider] || 'doubao-seed-2-0-code';
-    updateStepStatus(0, 'completed');
-    enableStep(1);
-    goToStep(1);
-  }
   setupDragDrop();
   renderHistory();
+  showSecurityTip();
+  updateModelForProvider();
+}
+
+function showSecurityTip() {
+  const tipHtml = `
+    <div class="security-tip" style="background: var(--color-terracotta-light); border: 1px solid var(--color-terracotta); padding: 16px; border-radius: var(--radius-md); margin-bottom: 16px;">
+      <div style="display: flex; align-items: start; gap: 12px;">
+        <span style="font-size: 20px;">🔒</span>
+        <div>
+          <div style="font-weight: 600; color: var(--color-clay); margin-bottom: 8px; font-size: 14px;">安全提示</div>
+          <ul style="margin: 0; padding-left: 20px; color: var(--text-secondary); font-size: 13px; line-height: 1.6;">
+            <li>API Key 仅在当前会话中使用，不会保存到本地</li>
+            <li>关闭浏览器后，API Key 将自动清除</li>
+            <li>请勿在公共电脑上保存 API Key</li>
+            <li>建议定期更换 API Key 以确保安全</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  const configPanel = document.getElementById('panel-0');
+  const tipBox = configPanel.querySelector('.tip-box');
+  if (tipBox) {
+    tipBox.insertAdjacentHTML('afterend', tipHtml);
+  }
 }
 
 // 根据提供商自动设置默认模型
 function updateModelForProvider() {
   const provider = document.getElementById('providerSelect').value;
   config.provider = provider;
-  config.model = PROVIDER_DEFAULT_MODELS[provider] || 'doubao-seed-2-0-code';
+  config.model = PROVIDER_DEFAULT_MODELS[provider] || 'stepfun/step-3.5-flash:free';
+  
+  const apiKeyInput = document.getElementById('apiKey');
+  const freeTip = document.getElementById('freeModelTip');
+  
+  if (PROVIDER_FREE_KEYS[provider]) {
+    apiKeyInput.placeholder = '免费模型无需输入密钥';
+    apiKeyInput.disabled = true;
+    apiKeyInput.style.opacity = '0.5';
+    apiKeyInput.style.backgroundColor = 'var(--color-stone)';
+    if (freeTip) freeTip.style.display = 'block';
+  } else {
+    apiKeyInput.placeholder = '输入您的API密钥';
+    apiKeyInput.disabled = false;
+    apiKeyInput.style.opacity = '1';
+    apiKeyInput.style.backgroundColor = '';
+    if (freeTip) freeTip.style.display = 'none';
+  }
 }
 
 async function testAPIConnection() {
   const provider = document.getElementById('providerSelect').value;
-  const apiKey = document.getElementById('apiKey').value.trim();
-  const model = PROVIDER_DEFAULT_MODELS[provider] || 'doubao-seed-2-0-code';
+  let apiKey = document.getElementById('apiKey').value.trim();
+  const model = PROVIDER_DEFAULT_MODELS[provider] || 'stepfun/step-3.5-flash:free';
   const testBtn = document.getElementById('testBtn');
   const testResult = document.getElementById('testResult');
   
-  if (!apiKey) {
+  if (!apiKey && !PROVIDER_FREE_KEYS[provider]) {
     testResult.style.display = 'block';
     testResult.className = 'test-result error';
     testResult.innerHTML = '❌ 请先输入 API Key';
     return;
+  }
+  
+  if (!apiKey && PROVIDER_FREE_KEYS[provider]) {
+    apiKey = PROVIDER_FREE_KEYS[provider];
   }
   
   testBtn.disabled = true;
@@ -1335,7 +1515,7 @@ async function testAPIConnection() {
     `;
   } finally {
     testBtn.disabled = false;
-    testBtn.innerHTML = '🔌 测试 API 连接';
+    testBtn.innerHTML = '🔌 测试连接';
   }
 }
 
@@ -1408,20 +1588,23 @@ function removeFile(index) {
 }
 
 function saveConfig() {
-  const apiKey = document.getElementById('apiKey').value.trim();
   const provider = document.getElementById('providerSelect').value;
-  // 使用提供商默认模型，无需用户选择
-  const model = PROVIDER_DEFAULT_MODELS[provider] || 'doubao-seed-2-0-code';
-  if (!apiKey) {
+  let apiKey = document.getElementById('apiKey').value.trim();
+  const model = PROVIDER_DEFAULT_MODELS[provider] || 'stepfun/step-3.5-flash:free';
+  
+  if (!apiKey && !PROVIDER_FREE_KEYS[provider]) {
     alert('请输入API密钥');
     return;
   }
+  
+  if (!apiKey && PROVIDER_FREE_KEYS[provider]) {
+    apiKey = PROVIDER_FREE_KEYS[provider];
+  }
+  
   config.apiKey = apiKey;
   config.provider = provider;
   config.model = model;
-  localStorage.setItem('apiKey', apiKey);
-  localStorage.setItem('provider', provider);
-  localStorage.setItem('model', model);
+  
   updateStepStatus(0, 'completed');
   enableStep(1);
   goToStep(1);
@@ -1762,38 +1945,73 @@ async function generateAll() {
   document.getElementById('genProgress').style.display = 'block';
   document.getElementById('resultsSection').style.display = 'none';
   
+  document.getElementById('genEstimatedTime').style.display = 'flex';
+  document.getElementById('streamPreviewContainer').style.display = 'block';
+  
   const tasks = [
-    { label: '软件概述', pct: 50, fn: genOverview, idx: 0 },
-    { label: '设计说明书', pct: 100, fn: genDesignSpec, idx: 1 },
+    { label: '软件概述', pct: 25, fn: genOverview, idx: 0, stepId: 'gps-0' },
+    { label: '设计说明书', pct: 75, fn: genDesignSpec, idx: 1, stepId: 'gps-1' },
   ];
+  
+  let totalElapsed = 0;
+  const startTime = Date.now();
   
   for (let i = 0; i < tasks.length; i++) {
     const t = tasks[i];
     updateProgressStep('gps', i, 'active');
-    updateProgressBar('genProgressBar', Math.max(i * 50, 10));
+    updateProgressBar('genProgressBar', Math.max(i * 25, 5));
+    
+    const taskStartTime = Date.now();
     
     try {
-      results[t.idx] = await t.fn(extractedInfo);
+      results[t.idx] = await t.fn(extractedInfo, (content, wordCount) => {
+        updateStreamPreview(content, wordCount);
+        const countEl = document.getElementById(`gps-${t.idx}-count`);
+        if (countEl) countEl.textContent = `· ${wordCount} 字`;
+      });
     } catch (e) {
       results[t.idx] = `【生成失败】${e.message}`;
     }
     
+    const taskElapsed = (Date.now() - taskStartTime) / 1000;
+    totalElapsed += taskElapsed;
+    
     updateProgressStep('gps', i, 'completed');
     document.getElementById(`resultContent${t.idx}`).textContent = results[t.idx];
+    
+    const countEl = document.getElementById(`gps-${t.idx}-count`);
+    if (countEl) countEl.textContent = `· ${results[t.idx].length} 字`;
   }
   
+  updateProgressStep('gps', 2, 'active');
+  updateProgressBar('genProgressBar', 85);
+  document.getElementById('genStatusText').textContent = '文档格式校验中...';
+  
+  await new Promise(r => setTimeout(r, 500));
+  
+  updateProgressStep('gps', 2, 'completed');
+  updateProgressStep('gps', 3, 'active');
+  updateProgressBar('genProgressBar', 95);
+  document.getElementById('genStatusText').textContent = '准备下载...';
+  
+  await new Promise(r => setTimeout(r, 300));
+  
+  updateProgressStep('gps', 3, 'completed');
   updateProgressBar('genProgressBar', 100);
   updateStepStatus(3, 'completed');
+  
+  document.getElementById('genEstimatedTime').style.display = 'none';
+  document.getElementById('streamPreviewContainer').style.display = 'none';
   
   setTimeout(() => {
     document.getElementById('genProgress').style.display = 'none';
     document.getElementById('resultsSection').style.display = 'block';
     document.getElementById('btnDlOverview').disabled = false;
     document.getElementById('btnDlDesign').disabled = false;
-  }, 500);
+  }, 300);
 }
 
-async function genOverview(info) {
+async function genOverview(info, onChunk) {
   const sys = '你是中国软件著作权登记申请材料撰写专家。请严格按照官方要求的软件概述格式输出，语言正式规范，符合软著申报标准。';
   const prompt = `请根据以下信息，生成一份符合官方要求的软著登记【软件概述】文档。
 
@@ -1854,10 +2072,10 @@ async function genOverview(info) {
 3. 源程序量用阿拉伯数字表示，如：15000行
 4. "主要功能和技术特点"字段需简明阐述软件的研发目的、主要功能、用途和技术特点，300字以上
 5. 语言正式规范，符合软著申报标准`;
-  return callLLM([{role:'system',content:sys},{role:'user',content:prompt}], 3000);
+  return callLLMStream([{role:'system',content:sys},{role:'user',content:prompt}], onChunk, 3000);
 }
 
-async function genDesignSpec(info) {
+async function genDesignSpec(info, onChunk) {
   const sys = '你是中国软件著作权登记申请材料撰写专家，擅长撰写规范的软著设计说明书。请生成结构完整、内容详实的设计说明书，符合真实软著申请规范。绝对不能编造任何人员信息。';
   
   const teamMembersRaw = info.team_members_raw || '';
@@ -1944,7 +2162,7 @@ ${hasRealMembers ? `9. 项目时间表的人员分工表格必须使用上面提
 12. User Story 要具体描述用户角色、操作和目的，不要泛泛而谈
 13. 验收标准要具体可测量，包含具体的输入输出、界面元素、交互逻辑等`;
 
-  return callLLM([{role:'system',content:sys},{role:'user',content:prompt}], 8000);
+  return callLLMStream([{role:'system',content:sys},{role:'user',content:prompt}], onChunk, 8000);
 }
 
 async function callLLM(messages, maxTokens = 3000) {
@@ -1969,6 +2187,104 @@ async function callLLM(messages, maxTokens = 3000) {
   const data = await response.json();
   if (!data.choices?.[0]) throw new Error('返回格式异常');
   return data.choices[0].message.content;
+}
+
+async function callLLMStream(messages, onChunk, maxTokens = 3000) {
+  let apiKey = config.apiKey;
+  if (!apiKey && PROVIDER_FREE_KEYS[config.provider]) {
+    apiKey = PROVIDER_FREE_KEYS[config.provider];
+  }
+  
+  const response = await fetch('http://localhost:3000/api/chat/stream', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      apiKey: apiKey,
+      model: config.model,
+      messages: messages
+    })
+  });
+  
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ error: { message: 'API请求失败' } }));
+    const errorMsg = typeof errorData.error === 'string' 
+      ? errorData.error 
+      : (errorData.error?.message || JSON.stringify(errorData.error) || 'API请求失败');
+    throw new Error(errorMsg);
+  }
+  
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let fullContent = '';
+  let buffer = '';
+  
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || '';
+    
+    for (const line of lines) {
+      if (line.startsWith('data: ')) {
+        const data = line.slice(6);
+        if (data === '[DONE]') continue;
+        
+        try {
+          const parsed = JSON.parse(data);
+          if (parsed.error) {
+            throw new Error(parsed.error);
+          }
+          if (parsed.content) {
+            fullContent += parsed.content;
+            if (onChunk) {
+              onChunk(fullContent, fullContent.length);
+            }
+          }
+        } catch (e) {
+          if (e.message !== 'Unexpected end of JSON input') {
+            console.error('Parse error:', e);
+          }
+        }
+      }
+    }
+  }
+  
+  return fullContent;
+}
+
+function updateStreamPreview(content, wordCount) {
+  const lines = content.split('\n').filter(l => l.trim());
+  
+  const topLine = document.getElementById('previewLineTop');
+  const middleLine = document.getElementById('previewLineMiddle');
+  const bottomLine = document.getElementById('previewLineBottom');
+  const wordCountEl = document.getElementById('streamWordCount');
+  
+  if (lines.length >= 3) {
+    topLine.textContent = lines[lines.length - 3].substring(0, 50);
+    middleLine.textContent = lines[lines.length - 2].substring(0, 50);
+    bottomLine.textContent = lines[lines.length - 1].substring(0, 50);
+  } else if (lines.length === 2) {
+    topLine.textContent = '';
+    middleLine.textContent = lines[0].substring(0, 50);
+    bottomLine.textContent = lines[1].substring(0, 50);
+  } else if (lines.length === 1) {
+    topLine.textContent = '';
+    middleLine.textContent = lines[0].substring(0, 50);
+    bottomLine.textContent = '';
+  } else {
+    const text = content.substring(Math.max(0, content.length - 100));
+    const chunks = text.match(/.{1,50}/g) || [];
+    topLine.textContent = chunks[0] || '';
+    middleLine.textContent = chunks[1] || chunks[0] || '';
+    bottomLine.textContent = chunks[2] || chunks[1] || '';
+  }
+  
+  wordCountEl.textContent = `${wordCount} 字`;
 }
 
 function showResultTab(idx) {
@@ -2170,9 +2486,48 @@ function deleteHistoryItem(index) {
   renderHistory();
 }
 
+// 加密文本动画效果
+function initEncryptedText() {
+  const subtitle = document.getElementById('encryptedSubtitle');
+  if (!subtitle) return;
+  
+  const originalText = 'AI 驱动 · 一键生成软件著作权申请材料';
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%^&*';
+  let iterations = 0;
+  const maxIterations = originalText.length;
+  
+  function encrypt() {
+    if (iterations >= maxIterations) {
+      subtitle.textContent = originalText;
+      return;
+    }
+    
+    const encrypted = originalText
+      .split('')
+      .map((char, index) => {
+        if (index < iterations) {
+          return originalText[index];
+        }
+        if (char === ' ' || char === '·') {
+          return char;
+        }
+        return chars[Math.floor(Math.random() * chars.length)];
+      })
+      .join('');
+    
+    subtitle.textContent = encrypted;
+    iterations++;
+    
+    setTimeout(encrypt, 180);
+  }
+  
+  encrypt();
+}
+
 // 初始化时渲染历史记录
 init();
 renderHistory();
+initEncryptedText();
 </script>
 </body>
 </html>

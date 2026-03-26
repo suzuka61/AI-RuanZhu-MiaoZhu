@@ -1,4 +1,11 @@
 node_modules/
+dist/
 .DS_Store
 *.log
-/tmp/
+.env
+*.icns
+*.ico
+*.png
+!icon.png
+test-*.js
+测试*.docx
