@@ -120,33 +120,33 @@ npm run build:linux
 2. 点击"测试连接"验证
 3. 点击"保存并继续"
 
-![首页](软件界面/1.首页.jpg)
+![首页](https://github.com/suzuka61/AI-MiaoZhu/blob/4da5ceb8c220c5e0ebf8798974ffd087ebe76434/%E8%BD%AF%E4%BB%B6%E7%95%8C%E9%9D%A2/1.%E9%A6%96%E9%A1%B5.jpg)
 
 ### 第二步：上传文件
 1. 上传项目文档（支持.doc, .docx, .pdf）
 2. 或直接粘贴文档内容
 3. 点击"AI提取信息"
 
-![上传文件](图片说明/2.第二页上传文件.png)
+![上传文件](https://github.com/suzuka61/AI-MiaoZhu/blob/4da5ceb8c220c5e0ebf8798974ffd087ebe76434/%E8%BD%AF%E4%BB%B6%E7%95%8C%E9%9D%A2/2.%E7%AC%AC%E4%BA%8C%E9%A1%B5%E4%B8%8A%E4%BC%A0%E6%96%87%E4%BB%B6.jpg)
 
 ### 第三步：确认信息
 1. 核对提取的信息
 2. 手动修改错误信息
 3. 点击"生成软著材料"
 
-![确认信息](图片说明/3.第三页确认信息页.png)
+![确认信息](https://github.com/suzuka61/AI-MiaoZhu/blob/4da5ceb8c220c5e0ebf8798974ffd087ebe76434/%E8%BD%AF%E4%BB%B6%E7%95%8C%E9%9D%A2/3.%E7%AC%AC%E4%B8%89%E9%A1%B5%E7%A1%AE%E8%AE%A4%E4%BF%A1%E6%81%AF%E9%A1%B5.jpg)
 
 ### 第四步：生成中
 实时预览生成进度，预估剩余时间
 
-![生成中](图片说明/4.第四页生成中.png)
+![生成中](https://github.com/suzuka61/AI-MiaoZhu/blob/4da5ceb8c220c5e0ebf8798974ffd087ebe76434/%E8%BD%AF%E4%BB%B6%E7%95%8C%E9%9D%A2/4.%E7%AC%AC%E5%9B%9B%E9%A1%B5%E7%94%9F%E6%88%90%E4%B8%AD.jpg)
 
 ### 第五步：下载文档
 1. 查看生成的材料
 2. 下载软件概述.docx
 3. 下载设计说明书.docx
 
-![生成结果](图片说明/5.4.第五页生成结果.png)
+![生成结果](https://github.com/suzuka61/AI-MiaoZhu/blob/4da5ceb8c220c5e0ebf8798974ffd087ebe76434/%E8%BD%AF%E4%BB%B6%E7%95%8C%E9%9D%A2/5.4.%E7%AC%AC%E4%BA%94%E9%A1%B5%E7%94%9F%E6%88%90%E7%BB%93%E6%9E%9C.jpg)
 
 ## 📄 文档说明
 
