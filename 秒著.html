@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>秒著 - AI软著材料生成</title>
+<title>秒著 - 软著材料生成</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -1202,7 +1202,7 @@ textarea {
     <div class="step-panel active" id="panel-0">
       <div class="panel-header">
         <h2>模型配置</h2>
-        <p>配置火山引擎API密钥以启用AI处理功能</p>
+        <p>配置火山引擎API密钥以启用处理功能</p>
       </div>
       <!-- API 设置区域 -->
       <div class="form-group">
@@ -1246,11 +1246,11 @@ textarea {
       <div class="file-list" id="fileList"></div>
       <div class="mt-16">
         <label>或直接粘贴文档内容</label>
-        <textarea id="pasteText" placeholder="没有文档也没关系，用几句话描述你的产品即可，例如：&quot;我做了一个点餐小程序，顾客扫码点餐、在线支付，后台有菜单管理和订单统计，用微信小程序+Java开发，2个人做了3个月，公司叫XX科技...&quot; AI 会自动从描述中提取所需信息，不确定的字段可以在下一步手动补充。"></textarea>
+        <textarea id="pasteText" placeholder="没有文档也没关系，用几句话描述你的产品即可，例如：&quot;我做了一个点餐小程序，顾客扫码点餐、在线支付，后台有菜单管理和订单统计，用微信小程序+Java开发，2个人做了3个月，公司叫XX科技...&quot; 系统会自动从描述中提取所需信息，不确定的字段可以在下一步手动补充。"></textarea>
       </div>
       <p id="imgTip" class="img-tip"></p>
       <div class="mt-24">
-        <button class="btn btn-primary btn-full" id="processBtn" onclick="extractInfo()" disabled>AI 提取信息</button>
+        <button class="btn btn-primary btn-full" id="processBtn" onclick="extractInfo()" disabled>提取信息</button>
       </div>
     </div>
     <div class="step-panel" id="panel-2">
@@ -1273,7 +1273,7 @@ textarea {
           </div>
           <div class="progress-step" id="eps-1">
             <div class="progress-step-icon"></div>
-            <div class="progress-step-text">AI提取关键信息</div>
+            <div class="progress-step-text">提取关键信息</div>
           </div>
         </div>
       </div>
@@ -1286,7 +1286,7 @@ textarea {
     <div class="step-panel" id="panel-3">
       <div class="panel-header">
         <h2>生成结果</h2>
-        <p>AI生成的软件著作权申请材料</p>
+        <p>提取信息并生成软著申请材料</p>
       </div>
       <div class="progress-section" id="genProgress">
         <div class="progress-header">
@@ -1614,7 +1614,7 @@ const SOFTWARE_TEMPLATES = {
       source_lines: '22000'
     },
     content_templates: {
-      purpose: '为物联网应用提供设备管理、数据采集、远程控制等功能，实现设备互联互通，构建智能化应用场景。',
+      purpose: '做物联网应用的设备管理、数据采集、远程控制等功能，把各种设备连起来，方便远程操作和查看数据。',
       features: [
         '设备管理：支持设备注册、配置、监控、固件升级等设备全生命周期管理',
         '数据采集：通过MQTT等协议采集设备数据，支持多种数据格式和采集频率',
@@ -2162,7 +2162,7 @@ async function extractInfo() {
     updateProgressBar('extractProgressBar', 50);
     updateProgressStep('eps', 1, 'active');
     
-    const sys = '你是中国软件著作权申请专家，擅长从项目文档中提取软著申请所需信息。请严格按照用户要求的 JSON 格式返回，不要包含任何 markdown 代码块标记。';
+    const sys = '你的任务是从项目文档中提取中国软件著作权申请所需信息，以JSON格式返回。不要包含任何markdown代码块标记。';
     
     const raw = await callLLM([
       { role: 'system', content: sys },
@@ -2173,7 +2173,7 @@ async function extractInfo() {
 
 【重要规则】
 1. 提取优先：优先从文档中提取真实信息
-2. 智能补充：如果文档信息不足，根据软件名称和类型进行合理推测补充：
+2. 合理补充：如果文档信息不足，根据软件名称和类型进行合理推测补充：
    - 技术性字段（编程语言、开发工具、运行环境等）：根据软件类型使用行业通用配置
    - 描述性字段（开发目的、主要功能）：根据软件名称和类型生成符合行业规范的内容
    - 硬件环境：使用当前主流开发硬件配置
@@ -2183,7 +2183,6 @@ async function extractInfo() {
    - 主要功能：至少200字，列出核心功能模块及简要说明
    - 技术架构：至少50字，说明技术选型和架构特点
 4. 人员信息：team_members_raw字段只有文档中明确写了人员姓名和职务才能填写，否则必须留空，绝对不能编造
-5. 质量标准：所有补充内容要符合软著申请规范，语言正式专业
 
 文档内容：
 ${content.slice(0, 6000)}` }
@@ -2336,6 +2335,8 @@ async function generateAll() {
         results[t.idx] = `【生成失败】${e.message}`;
       }
       
+      results[t.idx] = deAI(results[t.idx]);
+      
       updateProgressStep('gps', i, 'completed');
       document.getElementById(`resultContent${t.idx}`).textContent = results[t.idx];
       
@@ -2365,20 +2366,99 @@ async function generateAll() {
   }
 }
 
+function deAI(text) {
+  if (!text || text.startsWith('【生成失败】')) return text;
+
+  // 只做安全的、无歧义的词级替换（有上下文歧义的词不加进来）
+  const replacements = [
+    ['旨在', '为了'],
+    ['致力于', '在'],
+    ['助力', '帮'],
+    ['赋能', '给'],
+    ['打造', '做'],
+    ['推动', '带动'],
+    ['驱动', '带动'],
+    ['一站式', '集中'],
+    ['全方位', '各方面'],
+    ['一体化', '整合'],
+    ['综合性', '多种'],
+    ['卓越', '好'],
+    ['优秀', '不错'],
+    ['亮点', '要点'],
+    ['显著', '明显'],
+    ['显著地', '明显地'],
+    ['显著提升', '明显提高'],
+    ['显著改善', '明显改善'],
+    ['不仅如此', '而且'],
+    ['值得一提的是', '另外'],
+    ['综上所述', '总的来说'],
+    ['总而言之', '总的来说'],
+    ['不容忽视', '值得注意'],
+    ['不可或缺', '必要'],
+    ['至关重要', '很重要'],
+    ['举足轻重', '重要'],
+    ['日趋', '越来越'],
+    ['日益', '越来越'],
+    ['蓬勃发展', '发展很快'],
+    ['应运而生', '因为需要而出现'],
+    ['大势所趋', '趋势'],
+    ['日新月异', '变化快'],
+    ['层出不穷', '不断出现'],
+    ['蒸蒸日上', '越来越好'],
+    ['欣欣向荣', '发展不错'],
+  ];
+
+  let result = text;
+  for (const [ai, human] of replacements) {
+    result = result.replace(new RegExp(ai, 'g'), human);
+  }
+
+  // 句式级替换——只处理结构性的AI套路句式
+  const patterns = [
+    [/首先[，,]([^其次]+)/g, (_, c) => c],
+    [/其次[，,]([^最后]+)/g, (_, c) => c],
+    [/最后[，,]/g, '另外，'],
+    [/一方面[，,]/g, '从这点看，'],
+    [/另一方面[，,]/g, '从另一面看，'],
+    [/极大地/g, '比较'],
+    [/大幅/g, '明显'],
+    [/全面地/g, '各方面'],
+    [/系统地/g, '按步骤'],
+    [/有效地/g, '能'],
+    [/高效地/g, '比较快地'],
+    [/便捷地/g, '方便地'],
+    [/无缝地/g, '顺畅地'],
+    [/端到端/g, '从头到尾'],
+  ];
+
+  for (const [pattern, replacer] of patterns) {
+    result = result.replace(pattern, replacer);
+  }
+
+  const bridgePatterns = [
+    [/与此同时/g, '同时'],
+    [/此外/g, '另外'],
+    [/毋庸置疑/g, '确实'],
+    [/显而易见/g, '很明显'],
+    [/有鉴于此/g, '所以'],
+    [/基于此/g, '据此'],
+    [/在此基础上/g, '在这之上'],
+  ];
+
+  for (const [pattern, replacer] of bridgePatterns) {
+    result = result.replace(pattern, replacer);
+  }
+
+  return result;
+}
+
 async function genOverview(info, onChunk) {
-  const sys = '你是中国软件著作权登记申请材料撰写专家。请严格按照官方要求的软件概述格式输出，语言正式规范，符合软著申报标准。';
-  const prompt = `请根据以下信息，生成一份符合官方要求的软著登记【软件概述】文档。
+  const sys = '你的任务是按照指定格式撰写软件著作权登记的软件概述文档。';
 
-【官方要求】
-1. 硬件环境：指开发和运行登记软件的计算机硬件和专用设备
-2. 软件环境：指开发和运行登记软件的操作系统、支持软件的名称及版本号
-3. 编程语言：指编写需要登记软件的编程语言，如：VC6.0，VB6.0等
-4. 源程序量：指登记软件的源程序的总行数，单位为"行"。用阿拉伯数字填写（如：15000行）
-5. 主要功能和技术特点：简明阐述软件的研发目的、主要功能、用途和技术特点
-6. 开发完成时间以及首次发表时间
+  const prompt = `根据以下信息，撰写软著登记【软件概述】文档。
 
-【输出格式要求】
-严格按照以下字段顺序输出，每个字段单独一行，格式为"字段名：内容"：
+【输出格式】
+严格按以下字段顺序输出，每字段单独一行，格式为"字段名：内容"：
 
 软件全称：（含版本号）
 软件简称：
@@ -2400,7 +2480,7 @@ async function genOverview(info, onChunk) {
 主要功能和技术特点：
 （简明阐述软件的研发目的、主要功能、用途和技术特点，300字以上）
 
-【待生成软件信息】
+【软件信息】
 软件全称：${info.software_name}
 软件简称：${info.short_name}
 版本号：${info.version}
@@ -2420,22 +2500,27 @@ async function genOverview(info, onChunk) {
 主要功能：${info.main_features}
 技术架构：${info.architecture}
 
-【重要规则】
-1. 严格按照上述字段顺序输出，不要添加任何标题或额外说明
+【撰写规则】
+1. 严格按上述字段顺序输出，不要添加标题或额外说明
 2. 开发完成日期须在首次发表日期之前或同一天
-3. 源程序量用阿拉伯数字表示，如：15000行
-4. "主要功能和技术特点"字段必须满足以下要求：
-   - 总字数不少于300字
-   - 必须包含：研发目的（50字+）、主要功能（150字+）、技术特点（100字+）
-   - 如果提供的"开发目的"字段少于200字，请根据软件类型和行业背景主动扩写
-   - 如果提供的"主要功能"字段少于200字，请详细展开功能模块和技术亮点
-   - 语言要专业正式，符合软著申报标准
-5. 语言正式规范，符合软著申报标准`;
+3. 源程序量用阿拉伯数字，如：15000行
+4. "主要功能和技术特点"不少于300字，需包含：研发目的（50字+）、主要功能（150字+）、技术特点（100字+）
+5. 【写作风格要求 - 极其重要】
+   - 像一个做了3年项目的产品经理写的内部文档，不要像公文或教科书
+   - 禁用词汇（出现即判AI）：旨在、致力于、助力、赋能、打造、构建、推动、驱动、创新、智能、完善、一站式、全方位、一体化、综合性、领先、卓越、优秀、核心、亮点、特色、显著
+   - 这些常见技术用词正常使用即可，不要替换：实现、支持、提供、确保、高效、便捷、优化、提升、全面
+   - 多用具体数字和场景，少用抽象概括，如写"每天处理约2000条订单"而不是"高效处理大量订单"
+   - 句子长短不一，避免每个段落结构雷同
+   - 不要出现"首先...其次...最后..."这种整齐排列
+
+【风格示例 - 请模仿这种写法】
+好的写法："做这个系统是因为仓库每天进出货太频繁，手工记容易出错，盘点经常对不上。用这个系统后，入库出库扫码登记，月底自动汇总，比以前少花2小时。主要做了入库登记、出库登记、库存盘点三个模块，用了SpringBoot+MySQL，跑了3个月没啥大问题。"
+差的写法："本系统致力于为企业提供全方位的库存管理解决方案，旨在实现仓储信息的全面数字化管理，推动企业供应链的智能化升级，构建一体化物流管理平台，确保数据高效流转与精准追踪，助力企业实现卓越运营。"`;
   return callLLMStream([{role:'system',content:sys},{role:'user',content:prompt}], onChunk, 3000);
 }
 
 async function genDesignSpec(info, onChunk) {
-  const sys = '你是中国软件著作权登记申请材料撰写专家，擅长撰写规范的软著设计说明书。请生成结构完整、内容详实的设计说明书，符合真实软著申请规范。绝对不能编造任何人员信息。';
+  const sys = '你的任务是按照指定章节结构撰写软件著作权登记的设计说明书。绝对不能编造任何人员信息。';
   
   const teamMembersRaw = typeof info.team_members_raw === 'string' ? info.team_members_raw : '';
   const hasRealMembers = teamMembersRaw.trim() && teamMembersRaw !== '待填写' && teamMembersRaw.split('\n').some(l => l.trim());
@@ -2477,7 +2562,7 @@ ${hasRealMembers ? '（使用提供的人员信息生成表格）' : '人员分�
 
 ### 5.1 功能模块一名称
 User story
-作为XXX，我需要XXX功能，以便XXX
+用自然的话描述这个功能是给谁用的、要做什么、解决什么问题，不要用固定句式
 
 acceptance criteria
 - 验收标准1
@@ -2513,16 +2598,31 @@ ${hasRealMembers ? `\n项目人员信息（从文档真实提取）：\n${teamMe
 5. 每个功能模块末尾必须添加 [WIREFRAME] 占位符（单独一行）
 6. 项目目标章节的架构图位置添加 [ARCHITECTURE_IMAGE] 占位符（单独一行）
 7. 表格用文本格式表示（用 | 分隔列）
-8. 语言专业正式，符合软著申请规范
-${hasRealMembers ? `9. 项目时间表的人员分工表格必须使用上面提供的真实人员信息` : `9. 【严禁编造】文档中没有提供人员信息，项目时间表章节只需说明"人员分工待实际项目确定"，绝对不能编造任何姓名！`}
-10. 再次强调：标题格式只能是 "## 数字。标题" 或 "### 数字。数字 标题"，绝对不能有 ** 符号
-11. 功能模块名称要与原文档保持一致，不要简化或修改
-12. User Story 要具体描述用户角色、操作和目的，不要泛泛而谈
-13. 验收标准要具体可测量，包含具体的输入输出、界面元素、交互逻辑等
-14. 【字数扩写规则】：
+8. ${hasRealMembers ? `项目时间表的人员分工表格必须使用上面提供的真实人员信息` : `【严禁编造】文档中没有提供人员信息，项目时间表章节只需说明"人员分工待实际项目确定"，绝对不能编造任何姓名！`}
+9. 标题格式只能是 "## 数字。标题" 或 "### 数字。数字 标题"，绝对不能有 ** 符号
+10. 功能模块名称要与原文档保持一致，不要简化或修改
+11. User Story 要具体描述用户角色、操作和目的，不要泛泛而谈
+12. 验收标准要具体可测量，包含具体的输入输出、界面元素、交互逻辑等
+13. 【字数扩写规则】：
     - 如果"开发目的/项目背景"字段少于200字，请根据软件类型和行业背景主动扩写
     - 如果"主要功能模块"字段描述过于简短，请详细展开每个功能模块的具体功能点
-    - 确保每个功能模块的描述至少300字，包含功能说明、操作流程、界面元素等`;
+    - 确保每个功能模块的描述至少300字，包含功能说明、操作流程、界面元素等
+
+【写作风格要求 - 极其重要，必须遵守】
+你是一个做了几年项目的产品经理在写内部文档，不是一个文秘在写公文。
+1. 禁用词汇（出现即判AI）：旨在、致力于、助力、赋能、打造、构建、推动、驱动、创新、智能、完善、一站式、全方位、一体化、综合性、领先、卓越、优秀、核心、亮点、特色、显著
+2. 这些常见技术用词正常使用即可，不要替换：实现、支持、提供、确保、高效、便捷、优化、提升、全面
+3. 句式要求：句子长短交错，有的3个字有的20个字；不要每个模块都用相同的描述结构；允许出现口语化表达
+4. 结构要求：不同模块的描述方式可以不同，有的先写操作流程，有的先写界面，有的先写数据；不要每个模块都是"功能说明→操作流程→界面元素"的固定顺序
+5. 数字和细节：多用具体数字（"响应时间不超过2秒""最多500条记录"），少用"高效""快速""大量"这种模糊词
+6. 禁止排列：不要用"首先...其次...最后..."，不要用"一方面...另一方面..."，不要用"不仅...而且..."
+
+【风格示例 - 请模仿这种写法】
+好的User Story："门店老板每天要查当天卖了多少钱，现在只能翻小票一条一条加，太慢了。做了销售汇总页面之后，打开就能看到今天总共收了多少钱、哪几个商品卖得最多，点击具体订单还能看明细。"
+差的User Story："作为门店管理员，我需要销售汇总功能，以便实时掌握店铺经营数据，提升管理效率，实现精细化运营。"
+
+好的功能描述："这个页面上方是个筛选栏，选日期和门店后点查询，下面表格就只显示对应的数据。表格列有：订单号、商品名、数量、金额、支付方式。每页最多50条，超过就分页。点某行的订单号能跳到订单详情页。"
+差的功能描述："该模块致力于为用户提供全方位的销售数据管理能力，实现了高效的数据查询与展示，确保信息准确可靠，支持多维度筛选，提供一站式数据汇总服务。"`;
 
   return callLLMStream([{role:'system',content:sys},{role:'user',content:prompt}], onChunk, 8000);
 }
@@ -2851,7 +2951,7 @@ function initEncryptedText() {
   const subtitle = document.getElementById('encryptedSubtitle');
   if (!subtitle) return;
   
-  const originalText = 'AI 驱动 · 一键生成软件著作权申请材料';
+  const originalText = '一键生成软件著作权申请材料';
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%^&*';
   
   function startAnimation() {

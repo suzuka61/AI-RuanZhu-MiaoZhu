@@ -21,7 +21,7 @@ const PROVIDERS = {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${apiKey}`,
       'HTTP-Referer': 'http://localhost:3000',
-      'X-Title': 'MiaoZhu - AI Software Copyright Generator'
+      'X-Title': 'MiaoZhu'
     }),
     formatRequest: (body) => ({
       model: body.model,
@@ -486,7 +486,7 @@ function makeEmptyHeaderFooter() {
 // ═══════════════════════════════════════════════════════════════
 
 function handleCORS(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
   res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 }
@@ -600,7 +600,7 @@ function handleChatStreamAPI(req, res) {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache',
     'Connection': 'keep-alive',
-    'Access-Control-Allow-Origin': '*'
+    'Access-Control-Allow-Origin': 'http://localhost:3000'
   });
 
   let body = '';
@@ -649,14 +649,14 @@ function handleGenerateDocx(req, res) {
       res.writeHead(200, {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         'Content-Disposition': 'attachment; filename*=UTF-8\'\'' + fname,
-        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Origin': 'http://localhost:3000',
         'Content-Length': buffer.length,
       });
       res.end(buffer);
       console.log('[' + new Date().toLocaleTimeString() + '] ✓ docx生成 ' + buffer.length + ' bytes');
     } catch(e) {
       console.error('生成docx失败:', e);
-      res.writeHead(500, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      res.writeHead(500, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'http://localhost:3000' });
       res.end(JSON.stringify({ error: e.message }));
     }
   });
@@ -1198,7 +1198,7 @@ const server = http.createServer((req, res) => {
   res.end('Not found');
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, '127.0.0.1', () => {
   console.log('\n  🌋 秒著 v5 (多模型适配版) 已启动');
   console.log('  ──────────────────────────────────');
   console.log('  👉 http://localhost:' + PORT);

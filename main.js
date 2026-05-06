@@ -19,7 +19,7 @@ function createWindow() {
       webSecurity: true
     },
     icon: path.join(__dirname, 'icon.png'),
-    title: '秒著 - AI软著材料生成'
+    title: '秒著 - 软著材料生成'
   });
 
   mainWindow.loadFile('秒著.html');
